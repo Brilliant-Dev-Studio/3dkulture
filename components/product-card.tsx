@@ -9,6 +9,17 @@ import { formatMMK } from "@/lib/format";
 export function ProductCard({ product }: { product: Product }) {
   const [imgIndex, setImgIndex] = useState(0);
   const count = product.images.length;
+  const hasDiscount = product.discountValue > 0;
+  const discountedPrice = Math.max(
+    0,
+    Math.round(
+      product.discountType === "fixed"
+        ? product.price - product.discountValue
+        : product.price * (1 - product.discountValue / 100),
+    ),
+  );
+  const discountLabel =
+    product.discountType === "fixed" ? `-${formatMMK(product.discountValue)}` : `-${product.discountValue}%`;
 
   function go(delta: number, e: React.MouseEvent) {
     e.preventDefault();
@@ -26,6 +37,12 @@ export function ProductCard({ product }: { product: Product }) {
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
+
+        {hasDiscount && (
+          <span className="absolute left-2 top-2 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+            {discountLabel}
+          </span>
+        )}
 
         <button
           type="button"
@@ -65,7 +82,14 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="mt-1 text-sm text-foreground transition-colors group-hover:text-brand">
           {product.title}
         </p>
-        <p className="mt-1 text-base font-semibold text-foreground">{formatMMK(product.price)}</p>
+        {hasDiscount ? (
+          <p className="mt-1 flex items-center gap-1.5">
+            <span className="text-base font-semibold text-brand">{formatMMK(discountedPrice)}</span>
+            <span className="text-xs text-muted line-through">{formatMMK(product.price)}</span>
+          </p>
+        ) : (
+          <p className="mt-1 text-base font-semibold text-foreground">{formatMMK(product.price)}</p>
+        )}
       </div>
     </Link>
   );

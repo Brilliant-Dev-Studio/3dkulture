@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  actorEmail  String
+  actorRole   String
+  action      String
+  targetType  String
+  targetId    String?
+  targetLabel String?
+  meta        Json     @default("{}")
+  createdAt   DateTime @default(now())
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  name     String     @unique
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Category[] @relation("CategoryTree")
+}
+
+model Color {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model Size {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model Material {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  title          String
+  category       String
+  description    String   @default("")
+  price          Int
+  costPrice      Int      @default(0)
+  stock          Int      @default(0)
+  lowStockThreshold Int   @default(5)
+  discountType   String   @default("percent")
+  discountValue  Int      @default(0)
+  images         String[]
+  colors         String[]
+  sizes          String[]
+  materials      String[]
+  sizePrices     Json     @default("{}")
+  materialPrices Json     @default("{}")
+  colorImages    Json     @default("{}")
+  materialImages Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  customerFullName String
+  customerPhone    String
+  customerAddress  String
+  notes            String      @default("")
+  total            Int
+  invoiceDataUrl   String?
+  invoiceName      String?
+  status           String      @default("pending")
+  createdAt        DateTime    @default(now())
+  items            OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  title     String
+  image     String
+  color     String
+  size      String
+  material  String  @default("")
+  qty       Int
+  price     Int
+  costPrice Int     @default(0)
+}

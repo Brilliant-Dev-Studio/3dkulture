@@ -18,7 +18,58 @@ function images(): [string, string, string] {
   return [nextImage(), nextImage(), nextImage()];
 }
 
-const BASE: Product[] = [
+export const CATEGORY_TREE: { name: string; subs: string[] }[] = [
+  { name: "3D Printers", subs: ["3D Printer Accessories", "3D Printer Spare Parts"] },
+  { name: "Filaments", subs: ["PLA", "PLA+", "PLA Silk", "PETG", "ABS", "ASA"] },
+  { name: "Art", subs: ["Sculptures", "Sign & Logos"] },
+  {
+    name: "Education",
+    subs: [
+      "Biology",
+      "Chemistry",
+      "Engineering",
+      "Geography",
+      "Mathematics",
+      "Physics & Astronomy",
+      "Other Education Models",
+    ],
+  },
+  { name: "Fashion", subs: ["Earrings", "Footwear", "Glasses", "Jewelry", "Rings", "Other Fashion Models"] },
+  { name: "Hobby & DIY", subs: ["Electronics", "Sport & Outdoors", "Vehicles", "Other Hobby & DIY"] },
+  { name: "Household", subs: ["Décor", "Festivities", "Garden", "Office", "Pets", "Other House Models"] },
+  { name: "Miniatures", subs: ["Animals", "Architecture", "Creatures", "People", "Other Miniatures"] },
+  {
+    name: "Cosplay & Props",
+    subs: ["Costumes", "Masks & Helmets", "Cosplay Weapons", "Other Cosplay & Props"],
+  },
+  {
+    name: "Tools",
+    subs: ["Gadgets", "Hand Tools", "Machine Tools", "Measure Tools", "Medical Tools", "Organizers", "Other Tools"],
+  },
+  {
+    name: "Toys & Games",
+    subs: ["Board Games", "Characters", "Outdoor Toys", "Puzzles", "Construction Sets", "Other Toys & Games"],
+  },
+  { name: "Others", subs: ["Pin Badges", "Pin Raw Materials"] },
+];
+
+const MATERIALS = ["PLA", "Resin", "ABS"];
+const SIZE_PRICES: Record<string, number> = { XS: 0, S: 0, M: 3000, L: 6000, XL: 10000 };
+const MATERIAL_PRICES: Record<string, number> = { PLA: 0, ABS: 2000, Resin: 8000 };
+
+const RAW_PRODUCTS: Omit<
+  Product,
+  | "materials"
+  | "sizePrices"
+  | "materialPrices"
+  | "colorImages"
+  | "materialImages"
+  | "costPrice"
+  | "discountType"
+  | "discountValue"
+  | "stock"
+  | "lowStockThreshold"
+>[] = [
   {
     id: "adizero-evo-sl",
     title: "Adizero Evo SL Shoes",
@@ -28,7 +79,7 @@ const BASE: Product[] = [
     price: 285000,
     images: images(),
     colors: ["Purple", "Blue", "Black"],
-    sizes: ["EU 40", "EU 41", "EU 42", "EU 43", "EU 44"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "handball-spezial",
@@ -39,7 +90,7 @@ const BASE: Product[] = [
     price: 210000,
     images: images(),
     colors: ["Navy", "White", "Black"],
-    sizes: ["EU 39", "EU 40", "EU 41", "EU 42", "EU 43"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "ultraboost-light",
@@ -50,7 +101,7 @@ const BASE: Product[] = [
     price: 320000,
     images: images(),
     colors: ["Red", "Black", "White"],
-    sizes: ["EU 40", "EU 41", "EU 42", "EU 43", "EU 44", "EU 45"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "gazelle-classic",
@@ -61,7 +112,7 @@ const BASE: Product[] = [
     price: 195000,
     images: images(),
     colors: ["Black", "Red", "Beige"],
-    sizes: ["EU 38", "EU 39", "EU 40", "EU 41", "EU 42"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "runfalcon-3",
@@ -72,7 +123,7 @@ const BASE: Product[] = [
     price: 150000,
     images: images(),
     colors: ["Pink", "White", "Grey"],
-    sizes: ["EU 36", "EU 37", "EU 38", "EU 39", "EU 40"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "superstar-og",
@@ -83,7 +134,7 @@ const BASE: Product[] = [
     price: 225000,
     images: images(),
     colors: ["White", "Black"],
-    sizes: ["EU 39", "EU 40", "EU 41", "EU 42", "EU 43", "EU 44"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "duramo-sl",
@@ -94,7 +145,7 @@ const BASE: Product[] = [
     price: 135000,
     images: images(),
     colors: ["Red", "Black", "Blue"],
-    sizes: ["EU 40", "EU 41", "EU 42", "EU 43", "EU 44"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
     id: "forum-low",
@@ -105,25 +156,28 @@ const BASE: Product[] = [
     price: 240000,
     images: images(),
     colors: ["White", "Navy", "Black"],
-    sizes: ["EU 39", "EU 40", "EU 41", "EU 42", "EU 43"],
+    sizes: ["XS", "S", "M", "L", "XL"],
   },
 ];
 
-// Repeat the base catalog with unique ids to have enough items to demo
-// infinite scroll / lazy loading against.
-export const PRODUCTS: Product[] = Array.from({ length: 6 }, (_, batch) =>
-  BASE.map((p) => ({
-    ...p,
-    id: batch === 0 ? p.id : `${p.id}-${batch}`,
-  })),
-).flat();
+export const BASE_PRODUCTS: Product[] = RAW_PRODUCTS.map((p) => ({
+  ...p,
+  materials: MATERIALS,
+  sizePrices: Object.fromEntries(p.sizes.map((s) => [s, SIZE_PRICES[s] ?? 0])),
+  materialPrices: Object.fromEntries(MATERIALS.map((m) => [m, MATERIAL_PRICES[m] ?? 0])),
+  colorImages: {},
+  materialImages: {},
+  costPrice: Math.round(p.price * 0.6),
+  discountType: "percent" as const,
+  discountValue: 0,
+  stock: 20,
+  lowStockThreshold: 5,
+}));
 
-export function getProduct(id: string) {
-  return PRODUCTS.find((p) => p.id === id);
-}
-
-export const CATEGORIES = Array.from(new Set(BASE.map((p) => p.category)));
-export const COLORS = Array.from(new Set(BASE.flatMap((p) => p.colors)));
-export const SIZES = Array.from(new Set(BASE.flatMap((p) => p.sizes))).sort();
-export const MIN_PRICE = Math.min(...BASE.map((p) => p.price));
-export const MAX_PRICE = Math.max(...BASE.map((p) => p.price));
+// NOTE: this file is now only a seed source for `prisma/seed.ts`.
+// The running app reads products/categories/colors/sizes from the database
+// via the /api/* routes — see lib/db.ts and lib/use-products.ts.
+export const CATEGORIES = Array.from(new Set(BASE_PRODUCTS.map((p) => p.category)));
+export const COLORS = Array.from(new Set(BASE_PRODUCTS.flatMap((p) => p.colors)));
+export const SIZES = Array.from(new Set(BASE_PRODUCTS.flatMap((p) => p.sizes))).sort();
+export const MATERIALS_LIST = MATERIALS;

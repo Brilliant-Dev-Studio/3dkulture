@@ -5,8 +5,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { FilterDrawerProvider } from "@/lib/filter-drawer-context";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { SiteChrome } from "@/components/site-chrome";
 
 const yatiSans = localFont({
   src: "../public/Yati font/Variation/Yati Sans Variation.ttf",
@@ -48,10 +47,8 @@ export default function RootLayout({
         <CartProvider>
           <FilterDrawerProvider>
             <Suspense>
-              <Navbar />
+              <SiteChrome>{children}</SiteChrome>
             </Suspense>
-            <div className="flex-1">{children}</div>
-            <Footer />
           </FilterDrawerProvider>
         </CartProvider>
       </body>

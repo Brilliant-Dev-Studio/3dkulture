@@ -47,7 +47,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addLine: (line) =>
         setLines((prev) => {
           const existing = prev.findIndex(
-            (l) => l.productId === line.productId && l.color === line.color && l.size === line.size,
+            (l) =>
+              l.productId === line.productId &&
+              l.color === line.color &&
+              l.size === line.size &&
+              l.material === line.material,
           );
           if (existing >= 0) {
             const next = [...prev];

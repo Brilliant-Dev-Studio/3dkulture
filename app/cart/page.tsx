@@ -4,16 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { getProduct } from "@/lib/products";
+import { useProducts } from "@/lib/use-products";
 import { formatMMK } from "@/lib/format";
+import { getFinalPrice } from "@/lib/pricing";
+import { useI18n } from "@/lib/i18n";
+import { Skeleton } from "@/components/skeleton";
 
 export default function CartPage() {
+  const { t } = useI18n();
   const { lines, removeLine, setQty } = useCart();
+  const { products, loading } = useProducts();
   const [draftQty, setDraftQty] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
 
   const items = lines
-    .map((line, index) => ({ line, index, product: getProduct(line.productId) }))
+    .map((line, index) => ({ line, index, product: products.find((p) => p.id === line.productId) }))
     .filter((item) => item.product);
 
   useEffect(() => {
@@ -21,16 +26,37 @@ export default function CartPage() {
   }, [lines]);
 
   const subtotal = items.reduce(
-    (sum, { line, product }) => sum + (product ? product.price * line.qty : 0),
+    (sum, { line, product }) =>
+      sum + (product ? getFinalPrice(product, line.size, line.material) * line.qty : 0),
     0,
   );
+
+  if (loading && lines.length > 0) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-6 h-6 w-24" />
+        <div className="space-y-3">
+          {lines.map((_, i) => (
+            <div key={i} className="flex gap-4 rounded-md border border-border p-4">
+              <Skeleton className="h-20 w-20 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
-        <h1 className="text-xl font-bold">Your cart is empty</h1>
+        <h1 className="text-xl font-bold">{t("cart.empty")}</h1>
         <Link href="/" className="mt-4 inline-block text-sm font-medium text-brand">
-          Continue shopping
+          {t("cart.continueShopping")}
         </Link>
       </div>
     );
@@ -44,14 +70,14 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h1 className="mb-6 text-xl font-bold">Cart</h1>
+      <h1 className="mb-6 text-xl font-bold">{t("cart.title")}</h1>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {/* Mobile cards */}
           <ul className="divide-y divide-border border-y border-border sm:hidden">
             {items.map(({ line, index, product }) => (
-              <li key={`${line.productId}-${line.color}-${line.size}`} className="flex gap-3 py-4">
+              <li key={`${line.productId}-${line.color}-${line.size}-${line.material}`} className="flex gap-3 py-4">
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-zinc-100">
                   <Image
                     src={product!.images[0]}
@@ -66,7 +92,7 @@ export default function CartPage() {
                     <div>
                       <p className="font-medium text-foreground">{product!.title}</p>
                       <p className="text-xs italic text-muted">
-                        {line.color} / {line.size}
+                        {[line.color, line.size, line.material].filter(Boolean).join(" / ")}
                       </p>
                     </div>
                     <button
@@ -114,7 +140,7 @@ export default function CartPage() {
                       </button>
                     </div>
                     <p className="font-bold text-brand">
-                      {formatMMK(product!.price * (draftQty[index] ?? line.qty))}
+                      {formatMMK(getFinalPrice(product!, line.size, line.material) * (draftQty[index] ?? line.qty))}
                     </p>
                   </div>
                 </div>
@@ -127,16 +153,16 @@ export default function CartPage() {
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase text-muted">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Product</th>
-                  <th className="px-4 py-3 font-semibold">Price</th>
-                  <th className="px-4 py-3 font-semibold">Quantity</th>
-                  <th className="px-4 py-3 font-semibold">Subtotal</th>
+                  <th className="px-4 py-3 font-semibold">{t("cart.product")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("cart.price")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("cart.quantity")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("cart.subtotal")}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {items.map(({ line, index, product }) => (
-                  <tr key={`${line.productId}-${line.color}-${line.size}`}>
+                  <tr key={`${line.productId}-${line.color}-${line.size}-${line.material}`}>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-4">
                         <div className="relative h-20 w-20 shrink-0 overflow-hidden bg-zinc-100">
@@ -151,12 +177,14 @@ export default function CartPage() {
                         <div>
                           <p className="font-medium text-foreground">{product!.title}</p>
                           <p className="text-xs italic text-muted">
-                            {line.color} / {line.size}
+                            {[line.color, line.size, line.material].filter(Boolean).join(" / ")}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-foreground">{formatMMK(product!.price)}</td>
+                    <td className="px-4 py-4 text-foreground">
+                      {formatMMK(getFinalPrice(product!, line.size, line.material))}
+                    </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center rounded-[25px] border border-border">
                         <button
@@ -193,7 +221,7 @@ export default function CartPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 font-medium text-foreground">
-                      {formatMMK(product!.price * (draftQty[index] ?? line.qty))}
+                      {formatMMK(getFinalPrice(product!, line.size, line.material) * (draftQty[index] ?? line.qty))}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
@@ -213,41 +241,41 @@ export default function CartPage() {
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <Link href="/" className="flex items-center gap-1 text-sm font-medium text-brand">
-              <span aria-hidden>←</span> Continue shopping
+              <span aria-hidden>←</span> {t("cart.continueShopping")}
             </Link>
             <button
               type="button"
               onClick={applyUpdates}
               className="flex items-center gap-1 text-sm font-medium text-brand"
             >
-              <span aria-hidden>↻</span> Update cart
+              <span aria-hidden>↻</span> {t("cart.updateCart")}
             </button>
           </div>
 
           <div className="mt-8">
-            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide">Order notes (optional)</h2>
+            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide">{t("cart.orderNotes")}</h2>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={5}
-              placeholder="Notes about your order, e.g. delivery instructions"
+              placeholder={t("cart.orderNotesPlaceholder")}
               className="w-full rounded-[25px] border border-border px-3 py-2 text-sm"
             />
           </div>
         </div>
 
         <div className="rounded-[25px] border border-border p-5">
-          <h2 className="mb-4 text-lg font-bold">Cart Totals</h2>
+          <h2 className="mb-4 text-lg font-bold">{t("cart.cartTotals")}</h2>
           <div className="flex items-center justify-between border-b border-border pb-4 text-sm">
-            <span className="text-muted">Subtotal</span>
+            <span className="text-muted">{t("cart.subtotal")}</span>
             <span className="font-bold text-foreground">{formatMMK(subtotal)}</span>
           </div>
-          <p className="mt-3 text-xs italic text-muted">Shipping &amp; taxes calculated at checkout</p>
+          <p className="mt-3 text-xs italic text-muted">{t("cart.shippingNote")}</p>
           <Link
             href="/checkout"
             className="mt-4 block w-full rounded-[25px] bg-foreground py-3 text-center text-xs font-semibold uppercase tracking-widest text-white hover:bg-black"
           >
-            Proceed to Checkout
+            {t("cart.proceedToCheckout")}
           </Link>
         </div>
       </div>

@@ -4,9 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { getProduct } from "@/lib/products";
+import { useProducts } from "@/lib/use-products";
 import { formatMMK } from "@/lib/format";
+import { getFinalPrice } from "@/lib/pricing";
 import { InvoiceDropzone } from "@/components/invoice-dropzone";
+import { useI18n } from "@/lib/i18n";
+import { Skeleton } from "@/components/skeleton";
 
 const fieldClass =
   "w-full rounded-[25px] border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10";
@@ -37,7 +40,8 @@ function FieldIcon({ path }: { path: string }) {
 }
 
 function Stepper() {
-  const steps = ["Cart", "Shipping", "Payment"];
+  const { t } = useI18n();
+  const steps = [t("checkout.stepCart"), t("checkout.stepShipping"), t("checkout.stepPayment")];
   return (
     <div className="mb-8 flex items-center justify-center gap-2 sm:gap-4">
       {steps.map((step, i) => (
@@ -59,16 +63,33 @@ function Stepper() {
   );
 }
 
+async function uploadInvoice(file: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/invoice-upload", { method: "POST", body: form });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? "Invoice upload failed.");
+  return body.url as string;
+}
+
 export default function CheckoutPage() {
+  const { t } = useI18n();
   const { lines, clear } = useCart();
+  const { products, loading } = useProducts();
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [placed, setPlaced] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const items = lines
-    .map((line) => ({ line, product: getProduct(line.productId) }))
+    .map((line) => ({ line, product: products.find((p) => p.id === line.productId) }))
     .filter((item) => item.product);
   const subtotal = items.reduce(
-    (sum, { line, product }) => sum + (product ? product.price * line.qty : 0),
+    (sum, { line, product }) =>
+      sum + (product ? getFinalPrice(product, line.size, line.material) * line.qty : 0),
     0,
   );
 
@@ -78,16 +99,38 @@ export default function CheckoutPage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-3xl text-emerald-500">
           ✓
         </div>
-        <h1 className="mt-5 text-2xl font-bold">Order placed</h1>
-        <p className="mt-2 text-sm text-muted">
-          Thanks — we&apos;ll confirm your order once payment is verified.
-        </p>
+        <h1 className="mt-5 text-2xl font-bold">{t("checkout.orderPlaced")}</h1>
+        <p className="mt-2 text-sm text-muted">{t("checkout.thanks")}</p>
         <Link
           href="/"
           className="mt-6 rounded-[25px] bg-foreground px-6 py-2.5 text-sm font-bold text-white hover:bg-black"
         >
-          Continue shopping
+          {t("cart.continueShopping")}
         </Link>
+      </div>
+    );
+  }
+
+  if (loading && lines.length > 0) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-4 h-4 w-24" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <div className={cardClass}>
+              <Skeleton className="mb-4 h-4 w-32" />
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </div>
+          </div>
+          <div className={cardClass}>
+            <Skeleton className="mb-4 h-4 w-28" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -95,18 +138,49 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center sm:px-6">
-        <h1 className="text-xl font-bold">Nothing to check out</h1>
-        <p className="mt-2 text-sm text-muted">Your cart is empty.</p>
+        <h1 className="text-xl font-bold">{t("checkout.emptyTitle")}</h1>
+        <p className="mt-2 text-sm text-muted">{t("checkout.emptyBody")}</p>
         <Link href="/" className="mt-4 inline-block text-sm font-medium text-brand">
-          Continue shopping
+          {t("cart.continueShopping")}
         </Link>
       </div>
     );
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // NOTE: invoice upload is stubbed locally — S3 wiring is deferred (see PROJECT_STRUCTURE.md).
+    setInvoiceError(null);
+    setSubmitting(true);
+    let invoiceUrl: string | null = null;
+    try {
+      if (invoiceFile) invoiceUrl = await uploadInvoice(invoiceFile);
+    } catch (err) {
+      setInvoiceError(err instanceof Error ? err.message : "Invoice upload failed.");
+      setSubmitting(false);
+      return;
+    }
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customer: { fullName, phone, address },
+        items: items.map(({ line, product }) => ({
+          productId: line.productId,
+          title: product!.title,
+          image: product!.images[0],
+          color: line.color,
+          size: line.size,
+          material: line.material,
+          qty: line.qty,
+          price: getFinalPrice(product!, line.size, line.material),
+        })),
+        total: subtotal,
+        invoiceDataUrl: invoiceUrl,
+        invoiceName: invoiceFile?.name ?? null,
+      }),
+    });
+    setSubmitting(false);
+    if (!res.ok) return;
     clear();
     setPlaced(true);
   }
@@ -118,7 +192,7 @@ export default function CheckoutPage() {
           href="/cart"
           className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-brand"
         >
-          <span aria-hidden>←</span> Back to cart
+          <span aria-hidden>←</span> {t("checkout.backToCart")}
         </Link>
 
         <h1 className="sr-only">Checkout</h1>
@@ -129,30 +203,44 @@ export default function CheckoutPage() {
             <div className={cardClass}>
               <div className="mb-5 flex items-center gap-3">
                 <StepBadge n={1} />
-                <h2 className="text-sm font-bold uppercase tracking-wide">Shipping Details</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wide">{t("checkout.shippingDetails")}</h2>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className={labelClass} htmlFor="fullName">
-                    Full name
+                    {t("checkout.fullName")}
                   </label>
                   <div className="relative">
                     <FieldIcon path="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-                    <input id="fullName" required placeholder="Aung Aung" className={fieldClass} />
+                    <input
+                      id="fullName"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Aung Aung"
+                      className={fieldClass}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="phone">
-                    Phone number
+                    {t("checkout.phone")}
                   </label>
                   <div className="relative">
                     <FieldIcon path="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" />
-                    <input id="phone" required placeholder="09xxxxxxxxx" className={fieldClass} />
+                    <input
+                      id="phone"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="09xxxxxxxxx"
+                      className={fieldClass}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="address">
-                    Delivery address
+                    {t("checkout.address")}
                   </label>
                   <div className="relative">
                     <svg
@@ -170,6 +258,8 @@ export default function CheckoutPage() {
                       id="address"
                       required
                       rows={3}
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
                       placeholder="House no, street, township, city"
                       className={`${fieldClass} pt-2.5`}
                     />
@@ -181,22 +271,21 @@ export default function CheckoutPage() {
             <div className={cardClass}>
               <div className="mb-2 flex items-center gap-3">
                 <StepBadge n={2} />
-                <h2 className="text-sm font-bold uppercase tracking-wide">Payment Invoice</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wide">{t("checkout.paymentInvoice")}</h2>
               </div>
-              <p className="ml-9 text-xs text-muted">
-                Upload your bank transfer invoice/receipt. Stored locally for now — S3 upload
-                wiring is deferred.
-              </p>
+              <p className="ml-9 text-xs text-muted">{t("checkout.paymentInvoiceNote")}</p>
               <div className="mt-4">
                 <InvoiceDropzone file={invoiceFile} onChange={setInvoiceFile} />
+                {invoiceError && <p className="mt-2 text-xs text-brand">{invoiceError}</p>}
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-[25px] bg-brand py-3.5 text-xs font-semibold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark"
+              disabled={submitting}
+              className="w-full rounded-[25px] bg-brand py-3.5 text-xs font-semibold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark disabled:opacity-60"
             >
-              Place Order
+              {submitting ? t("checkout.placingOrder") : t("checkout.placeOrder")}
             </button>
 
             <p className="flex items-center justify-center gap-1.5 text-xs text-muted">
@@ -204,15 +293,15 @@ export default function CheckoutPage() {
                 <rect x="5" y="11" width="14" height="9" rx="2" />
                 <path d="M8 11V7a4 4 0 0 1 8 0v4" />
               </svg>
-              Your information is safe with us
+              {t("checkout.secureNote")}
             </p>
           </div>
 
           <div className={`${cardClass} order-1 lg:order-2 lg:sticky lg:top-24 lg:self-start`}>
-            <h2 className="mb-4 text-lg font-bold">Order Summary</h2>
+            <h2 className="mb-4 text-lg font-bold">{t("checkout.orderSummary")}</h2>
             <ul className="scroll-thin max-h-80 space-y-4 overflow-y-auto pr-1">
               {items.map(({ line, product }) => (
-                <li key={`${line.productId}-${line.color}-${line.size}`} className="flex gap-3">
+                <li key={`${line.productId}-${line.color}-${line.size}-${line.material}`} className="flex gap-3">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100">
                     <Image
                       src={product!.images[0]}
@@ -228,11 +317,11 @@ export default function CheckoutPage() {
                   <div className="flex flex-1 flex-col justify-center">
                     <p className="text-sm font-medium text-foreground">{product!.title}</p>
                     <p className="text-xs italic text-muted">
-                      {line.color} / {line.size}
+                      {[line.color, line.size, line.material].filter(Boolean).join(" / ")}
                     </p>
                   </div>
                   <p className="self-center text-sm font-medium text-foreground">
-                    {formatMMK(product!.price * line.qty)}
+                    {formatMMK(getFinalPrice(product!, line.size, line.material) * line.qty)}
                   </p>
                 </li>
               ))}
@@ -240,16 +329,16 @@ export default function CheckoutPage() {
 
             <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between text-muted">
-                <span>Subtotal</span>
+                <span>{t("cart.subtotal")}</span>
                 <span>{formatMMK(subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted">
-                <span>Shipping</span>
-                <span>Calculated after order</span>
+                <span>{t("checkout.shipping")}</span>
+                <span>{t("checkout.shippingCalculated")}</span>
               </div>
             </div>
             <div className="mt-3 flex justify-between border-t border-border pt-3 text-lg font-bold">
-              <span>Total</span>
+              <span>{t("checkout.total")}</span>
               <span className="text-brand">{formatMMK(subtotal)}</span>
             </div>
           </div>

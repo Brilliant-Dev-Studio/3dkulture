@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CATEGORIES, COLORS, SIZES, MIN_PRICE, MAX_PRICE } from "@/lib/products";
 import { useFilterDrawer } from "@/lib/filter-drawer-context";
+import { useFilterOptions } from "@/lib/use-filter-options";
+import { useI18n } from "@/lib/i18n";
 import { AccordionSection } from "./accordion";
+import type { Category } from "@/lib/types";
 
 function useFilterParam(key: string) {
   const router = useRouter();
@@ -55,29 +57,84 @@ function FilterGroup({
   );
 }
 
-function PriceRangeFilter() {
+function CategoryFilterGroup({ title, categories }: { title: string; categories: Category[] }) {
+  const { values, toggle } = useFilterParam("category");
+  const mains = categories.filter((c) => !c.parentId);
+  const subsOf = (main: Category) => categories.filter((c) => c.parentId === main.id);
+
+  return (
+    <AccordionSection title={title}>
+      <ul className="scroll-thin max-h-64 space-y-3 overflow-y-auto pr-1">
+        {mains.map((main) => {
+          const subs = subsOf(main);
+          return (
+            <li key={main.id}>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={values.includes(main.name)}
+                  onChange={() => toggle(main.name)}
+                  className="h-4 w-4 shrink-0 accent-brand"
+                />
+                <span className={values.includes(main.name) ? "font-semibold" : "font-medium"}>{main.name}</span>
+              </label>
+              {subs.length > 0 && (
+                <ul className="mt-1.5 space-y-1.5 pl-6">
+                  {subs.map((sub) => (
+                    <li key={sub.id}>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
+                        <input
+                          type="checkbox"
+                          checked={values.includes(sub.name)}
+                          onChange={() => toggle(sub.name)}
+                          className="h-3.5 w-3.5 shrink-0 accent-brand"
+                        />
+                        <span className={values.includes(sub.name) ? "font-semibold text-foreground" : ""}>
+                          {sub.name}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </AccordionSection>
+  );
+}
+
+function PriceRangeFilter({ minPrice, maxPrice }: { minPrice: number; maxPrice: number }) {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlMin = Number(searchParams.get("priceMin") ?? MIN_PRICE);
-  const urlMax = Number(searchParams.get("priceMax") ?? MAX_PRICE);
+  const urlMin = Number(searchParams.get("priceMin") ?? minPrice);
+  const urlMax = Number(searchParams.get("priceMax") ?? maxPrice);
 
   const [min, setMin] = useState(urlMin);
   const [max, setMax] = useState(urlMax);
 
+  useEffect(() => {
+    setMin(urlMin);
+    setMax(urlMax);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minPrice, maxPrice]);
+
   function commit(nextMin: number, nextMax: number) {
     const params = new URLSearchParams(searchParams.toString());
-    if (nextMin <= MIN_PRICE) params.delete("priceMin");
+    if (nextMin <= minPrice) params.delete("priceMin");
     else params.set("priceMin", String(nextMin));
-    if (nextMax >= MAX_PRICE) params.delete("priceMax");
+    if (nextMax >= maxPrice) params.delete("priceMax");
     else params.set("priceMax", String(nextMax));
     router.push(`/?${params.toString()}`);
   }
 
-  const minPct = ((min - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100;
-  const maxPct = ((max - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100;
+  const minPct = maxPrice > minPrice ? ((min - minPrice) / (maxPrice - minPrice)) * 100 : 0;
+  const maxPct = maxPrice > minPrice ? ((max - minPrice) / (maxPrice - minPrice)) * 100 : 100;
 
   return (
-    <AccordionSection title="Price">
+    <AccordionSection title={t("filter.price")}>
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
@@ -86,10 +143,10 @@ function PriceRangeFilter() {
           <input
             type="number"
             value={min}
-            min={MIN_PRICE}
+            min={minPrice}
             max={max}
             onChange={(e) => setMin(Number(e.target.value))}
-            onBlur={() => commit(Math.max(MIN_PRICE, Math.min(min, max)), max)}
+            onBlur={() => commit(Math.max(minPrice, Math.min(min, max)), max)}
             className="w-full rounded border border-border py-2 pl-6 pr-2 text-sm"
           />
         </div>
@@ -102,9 +159,9 @@ function PriceRangeFilter() {
             type="number"
             value={max}
             min={min}
-            max={MAX_PRICE}
+            max={maxPrice}
             onChange={(e) => setMax(Number(e.target.value))}
-            onBlur={() => commit(min, Math.min(MAX_PRICE, Math.max(max, min)))}
+            onBlur={() => commit(min, Math.min(maxPrice, Math.max(max, min)))}
             className="w-full rounded border border-border py-2 pl-6 pr-2 text-sm"
           />
         </div>
@@ -123,8 +180,8 @@ function PriceRangeFilter() {
         />
         <input
           type="range"
-          min={MIN_PRICE}
-          max={MAX_PRICE}
+          min={minPrice}
+          max={maxPrice}
           step={1000}
           value={min}
           onChange={(e) => setMin(Math.min(Number(e.target.value), max))}
@@ -133,8 +190,8 @@ function PriceRangeFilter() {
         />
         <input
           type="range"
-          min={MIN_PRICE}
-          max={MAX_PRICE}
+          min={minPrice}
+          max={maxPrice}
           step={1000}
           value={max}
           onChange={(e) => setMax(Math.max(Number(e.target.value), min))}
@@ -147,21 +204,36 @@ function PriceRangeFilter() {
   );
 }
 
-function FilterFields() {
+function FilterFields({
+  categories,
+  colors,
+  sizes,
+  minPrice,
+  maxPrice,
+}: {
+  categories: Category[];
+  colors: string[];
+  sizes: string[];
+  minPrice: number;
+  maxPrice: number;
+}) {
+  const { t } = useI18n();
   return (
     <>
-      <PriceRangeFilter />
-      <FilterGroup title="Category" paramKey="category" options={CATEGORIES} />
-      <FilterGroup title="Color" paramKey="color" options={COLORS} />
-      <FilterGroup title="Size" paramKey="size" options={SIZES} />
+      <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} />
+      <CategoryFilterGroup title={t("filter.category")} categories={categories} />
+      <FilterGroup title={t("filter.color")} paramKey="color" options={colors} />
+      <FilterGroup title={t("filter.size")} paramKey="size" options={sizes} />
     </>
   );
 }
 
 export function FilterSidebar() {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { open: mobileOpen, setOpen: setMobileOpen } = useFilterDrawer();
+  const { categories, colors, sizes, minPrice, maxPrice } = useFilterOptions();
   const hasFilters = ["category", "color", "size", "priceMin", "priceMax"].some(
     (k) => searchParams.getAll(k).length,
   );
@@ -189,14 +261,14 @@ export function FilterSidebar() {
       <aside className="hidden w-64 shrink-0 sm:block">
         <div className="scroll-thin sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-lg font-medium">Filters</h2>
+            <h2 className="text-lg font-medium">{t("filter.title")}</h2>
             {hasFilters && (
               <button type="button" onClick={clearAll} className="text-xs font-medium text-brand">
-                Clear all
+                {t("filter.clearAll")}
               </button>
             )}
           </div>
-          <FilterFields />
+          <FilterFields categories={categories} colors={colors} sizes={sizes} minPrice={minPrice} maxPrice={maxPrice} />
         </div>
       </aside>
 
@@ -217,7 +289,7 @@ export function FilterSidebar() {
           }`}
         >
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 className="text-lg font-medium">Filters</h2>
+            <h2 className="text-lg font-medium">{t("filter.title")}</h2>
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
@@ -237,7 +309,7 @@ export function FilterSidebar() {
             </button>
           </div>
           <div className="scroll-thin flex-1 overflow-y-auto px-4">
-            <FilterFields />
+            <FilterFields categories={categories} colors={colors} sizes={sizes} minPrice={minPrice} maxPrice={maxPrice} />
           </div>
           <div className="border-t border-border p-4">
             <button
@@ -245,7 +317,7 @@ export function FilterSidebar() {
               onClick={() => setMobileOpen(false)}
               className="w-full rounded-full bg-brand py-3 text-sm font-bold text-white"
             >
-              Show results
+              {t("filter.showResults")}
             </button>
           </div>
         </div>

@@ -6,6 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useFilterDrawer } from "@/lib/filter-drawer-context";
+import { useI18n } from "@/lib/i18n";
+import { LanguageSwitcher } from "./language-switcher";
 
 export function Navbar() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export function Navbar() {
   const searchParams = useSearchParams();
   const { count } = useCart();
   const { setOpen: setFilterOpen } = useFilterDrawer();
+  const { t } = useI18n();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [mounted, setMounted] = useState(false);
 
@@ -65,7 +68,7 @@ export function Navbar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               type="search"
-              placeholder="Search products"
+              placeholder={t("nav.search")}
               className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
             />
             {query && (
@@ -82,6 +85,7 @@ export function Navbar() {
         </form>
 
         <div className="order-2 ml-auto flex items-center gap-4 sm:order-3">
+          <LanguageSwitcher />
           {pathname === "/" && (
             <button
               type="button"

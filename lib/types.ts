@@ -1,17 +1,60 @@
+export type Category = {
+  id: string;
+  name: string;
+  parentId: string | null;
+};
+
 export type Product = {
   id: string;
   title: string;
   category: string;
   description: string;
-  price: number; // MMK
-  images: [string, string, string];
+  price: number; // MMK, base selling price
+  costPrice: number; // MMK, admin's cost — used to compute profit
+  discountType: "percent" | "fixed"; // percent = % off, fixed = flat MMK off
+  discountValue: number; // 0-100 for percent, MMK amount for fixed
+  stock: number; // units in stock
+  lowStockThreshold: number; // stock at/below this is flagged low
+  images: string[];
   colors: string[];
   sizes: string[];
+  materials: string[];
+  sizePrices: Record<string, number>; // size name -> price delta from base
+  materialPrices: Record<string, number>; // material name -> price delta from base
+  colorImages: Record<string, string[]>; // color name -> gallery images for that color
+  materialImages: Record<string, string[]>; // material name -> gallery images for that material
 };
 
 export type CartLine = {
   productId: string;
   color: string;
   size: string;
+  material: string;
   qty: number;
+};
+
+export type OrderItem = {
+  productId: string;
+  title: string;
+  image: string;
+  color: string;
+  size: string;
+  material: string;
+  qty: number;
+  price: number;
+  costPrice: number;
+};
+
+export type Order = {
+  id: string;
+  createdAt: string; // ISO
+  customerFullName: string;
+  customerPhone: string;
+  customerAddress: string;
+  notes: string;
+  items: OrderItem[];
+  total: number;
+  invoiceDataUrl: string | null;
+  invoiceName: string | null;
+  status: "pending" | "confirmed" | "shipped" | "completed";
 };
