@@ -53,7 +53,7 @@ function StatusStepper({
 }) {
   const currentIndex = STATUSES.indexOf(status);
   return (
-    <div className="flex items-center gap-1.5 rounded-md border border-border bg-white p-1">
+    <div className="scroll-thin flex items-center gap-1.5 overflow-x-auto rounded-md border border-border bg-white p-1">
       {STATUSES.map((s, i) => {
         const active = s === status;
         const passed = i <= currentIndex;
@@ -62,7 +62,7 @@ function StatusStepper({
             key={s}
             type="button"
             onClick={() => onChange(s)}
-            className={`rounded px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
+            className={`shrink-0 rounded px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
               active
                 ? "bg-foreground text-white"
                 : passed
@@ -195,25 +195,23 @@ export default function AdminOrderDetailPage() {
         ← Back to orders
       </Link>
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-mono text-xl font-bold">{order.id}</h1>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="break-all font-mono text-lg font-bold sm:text-xl">{order.id}</h1>
             <CopyButton value={order.id} />
+            <span
+              className={`inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${STATUS_STYLE[order.status]}`}
+            >
+              {order.status}
+            </span>
           </div>
           <p className="mt-1 text-xs text-muted">
             Placed {new Date(order.createdAt).toLocaleString()} · {totalUnits} item{totalUnits === 1 ? "" : "s"}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span
-            className={`hidden rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ring-inset sm:inline-block ${STATUS_STYLE[order.status]}`}
-          >
-            {order.status}
-          </span>
-          <StatusStepper status={order.status} onChange={(s) => setStatus(order.id, s)} />
-        </div>
+        <StatusStepper status={order.status} onChange={(s) => setStatus(order.id, s)} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
@@ -222,38 +220,62 @@ export default function AdminOrderDetailPage() {
             <div className="border-b border-border px-5 py-3">
               <h2 className="text-sm font-bold uppercase tracking-wide">Items</h2>
             </div>
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-muted">
-                <tr>
-                  <th className="px-5 py-2 font-semibold">Product</th>
-                  <th className="px-5 py-2 font-semibold">Unit Price</th>
-                  <th className="px-5 py-2 font-semibold">Qty</th>
-                  <th className="px-5 py-2 text-right font-semibold">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {order.items.map((item, i) => (
-                  <tr key={i}>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-zinc-100">
-                          <Image src={item.image} alt={item.title} fill sizes="56px" unoptimized className="object-cover" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{item.title}</p>
-                          <p className="text-xs italic text-muted">
-                            {[item.color, item.size, item.material].filter(Boolean).join(" / ")}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-muted">{formatMMK(item.price)}</td>
-                    <td className="px-5 py-3 text-muted">×{item.qty}</td>
-                    <td className="px-5 py-3 text-right font-medium">{formatMMK(item.price * item.qty)}</td>
+            {/* Mobile cards */}
+            <ul className="divide-y divide-border sm:hidden">
+              {order.items.map((item, i) => (
+                <li key={i} className="flex items-center gap-3 px-4 py-3">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-zinc-100">
+                    <Image src={item.image} alt={item.title} fill sizes="56px" unoptimized className="object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-foreground">{item.title}</p>
+                    <p className="text-xs italic text-muted">
+                      {[item.color, item.size, item.material].filter(Boolean).join(" / ")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {formatMMK(item.price)} × {item.qty}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-sm font-medium">{formatMMK(item.price * item.qty)}</p>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full min-w-full text-left text-sm">
+                <thead className="text-xs uppercase text-muted">
+                  <tr>
+                    <th className="px-5 py-2 font-semibold">Product</th>
+                    <th className="px-5 py-2 font-semibold">Unit Price</th>
+                    <th className="px-5 py-2 font-semibold">Qty</th>
+                    <th className="px-5 py-2 text-right font-semibold">Subtotal</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {order.items.map((item, i) => (
+                    <tr key={i}>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-zinc-100">
+                            <Image src={item.image} alt={item.title} fill sizes="56px" unoptimized className="object-cover" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{item.title}</p>
+                            <p className="text-xs italic text-muted">
+                              {[item.color, item.size, item.material].filter(Boolean).join(" / ")}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-muted">{formatMMK(item.price)}</td>
+                      <td className="px-5 py-3 text-muted">×{item.qty}</td>
+                      <td className="px-5 py-3 text-right font-medium">{formatMMK(item.price * item.qty)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <div className="space-y-1.5 border-t border-border bg-zinc-50 px-5 py-4">
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Profit</span>

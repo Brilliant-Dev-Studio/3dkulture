@@ -42,7 +42,7 @@ function SubCategoryForm({ onAdd }: { onAdd: (name: string) => Promise<unknown> 
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Sub-category name"
-          className="flex-1 rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-brand"
+          className="min-w-0 flex-1 rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-brand"
         />
         <button
           type="submit"
@@ -141,7 +141,7 @@ export default function AdminCategoriesPage() {
         Main categories group your catalog; each product picks one sub-category underneath.
       </p>
 
-      <form onSubmit={onSubmitMain} className="mb-2 flex gap-2">
+      <form onSubmit={onSubmitMain} className="mb-2 flex flex-col gap-2 sm:flex-row">
         <input
           value={mainName}
           onChange={(e) => {
@@ -149,7 +149,7 @@ export default function AdminCategoriesPage() {
             if (mainError) setMainError(null);
           }}
           placeholder="New main category name"
-          className="flex-1 rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+          className="min-w-0 flex-1 rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand"
         />
         <button
           type="submit"

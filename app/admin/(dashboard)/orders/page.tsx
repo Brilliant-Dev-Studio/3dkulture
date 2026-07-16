@@ -36,19 +36,44 @@ function InvoiceIcon() {
 
 const STATUS_FILTERS = ["all", "pending", "confirmed", "shipped", "completed"] as const;
 
+function RefreshIcon({ spinning }: { spinning: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className={`h-4 w-4 ${spinning ? "animate-spin" : ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
+      <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />
+    </svg>
+  );
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
 
-  useEffect(() => {
-    fetch("/api/orders")
+  function loadOrders() {
+    return fetch("/api/orders")
       .then((r) => r.json())
-      .then(setOrders)
-      .finally(() => setLoading(false));
+      .then(setOrders);
+  }
+
+  useEffect(() => {
+    loadOrders().finally(() => setLoading(false));
   }, []);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  }
 
   const q = query.trim().toLowerCase();
   const filtered = orders.filter((o) => {
@@ -77,7 +102,19 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <h1 className="mb-6 text-xl font-bold">Orders</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-bold">Orders</h1>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={refreshing}
+          aria-label="Refresh orders"
+          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted hover:border-brand hover:text-brand disabled:opacity-60"
+        >
+          <RefreshIcon spinning={refreshing} />
+          Refresh
+        </button>
+      </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
