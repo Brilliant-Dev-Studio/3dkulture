@@ -20,10 +20,11 @@ export function ProductView({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const galleryImages =
-    (color && product.colorImages[color]?.length && product.colorImages[color]) ||
-    (material && product.materialImages[material]?.length && product.materialImages[material]) ||
-    product.images;
+  const extraImages = [
+    ...((color && product.colorImages[color]) || []),
+    ...((material && product.materialImages[material]) || []),
+  ];
+  const galleryImages = Array.from(new Set([...extraImages, ...product.images]));
   const unitPrice = getVariantPrice(product, size, material);
   const finalPrice = getFinalPrice(product, size, material);
   const hasDiscount = product.discountValue > 0;
