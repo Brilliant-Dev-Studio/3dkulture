@@ -6,6 +6,7 @@ import { useAdminStore } from "@/lib/admin-store";
 import { formatMMK } from "@/lib/format";
 import { ImageDropzone } from "@/components/image-dropzone";
 import { SearchableSelect } from "@/components/searchable-select";
+import { ColorPicker } from "@/components/color-picker";
 import type { Product } from "@/lib/types";
 
 const fieldClass =
@@ -23,19 +24,24 @@ function TagToggle({
   label,
   active,
   onClick,
+  swatch,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  swatch?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
+      className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors ${
         active ? "border-2 border-foreground font-semibold text-foreground" : "border-border text-foreground hover:border-foreground"
       }`}
     >
+      {swatch && (
+        <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: swatch }} />
+      )}
       {label}
     </button>
   );
@@ -67,31 +73,98 @@ function PriceDeltaRow({
   );
 }
 
+function SizePriceRow({
+  label,
+  value,
+  basePrice,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  basePrice: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm text-foreground">{label}</span>
+      <div className="relative w-32">
+        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted">K</span>
+        <input
+          type="number"
+          value={value ?? basePrice}
+          onChange={(e) => onChange(Number(e.target.value) || 0)}
+          placeholder={String(basePrice)}
+          className={`${fieldClass} py-1.5 pl-6 text-xs`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SizeDiscountRow({
+  label,
+  value,
+  unit,
+  overallValue,
+  onChange,
+  onClear,
+}: {
+  label: string;
+  value: number | undefined;
+  unit: string;
+  overallValue: number;
+  onChange: (v: number) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm text-foreground">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <div className="relative w-32">
+          <input
+            type="number"
+            value={value ?? ""}
+            onChange={(e) => onChange(Number(e.target.value) || 0)}
+            placeholder={overallValue ? `${overallValue}${unit}` : "Same as overall"}
+            className={`${fieldClass} py-1.5 pr-7 text-xs`}
+          />
+          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted">
+            {unit}
+          </span>
+        </div>
+        {value != null && (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label={`Clear ${label} discount override`}
+            className="text-xs text-muted hover:text-brand"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ImageManager({
   images,
   onImagesChange,
   colors,
   colorImages,
   onColorImagesChange,
-  materials,
-  materialImages,
-  onMaterialImagesChange,
 }: {
   images: string[];
   onImagesChange: (urls: string[]) => void;
   colors: string[];
   colorImages: Record<string, string[]>;
   onColorImagesChange: (color: string, urls: string[]) => void;
-  materials: string[];
-  materialImages: Record<string, string[]>;
-  onMaterialImagesChange: (material: string, urls: string[]) => void;
 }) {
-  type Tab = "default" | "color" | "material";
+  type Tab = "default" | "color";
   const [tab, setTab] = useState<Tab>("default");
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "default", label: "Default" },
     { key: "color", label: "By Color", count: colors.length },
-    { key: "material", label: "By Material", count: materials.length },
   ];
 
   return (
@@ -133,26 +206,6 @@ function ImageManager({
                 <ImageDropzone
                   initialUrls={colorImages[c] ?? []}
                   onChange={(urls) => onColorImagesChange(c, urls)}
-                />
-              </div>
-            ))}
-          </div>
-        ))}
-
-      {tab === "material" &&
-        (materials.length === 0 ? (
-          <p className="text-sm text-muted">Select at least one material under Variants to add material-specific photos.</p>
-        ) : (
-          <div className="space-y-6">
-            <p className="text-xs text-muted">
-              Optional — used only if the picked color has no photos of its own (color takes priority).
-            </p>
-            {materials.map((m) => (
-              <div key={m}>
-                <span className={labelClass}>{m}</span>
-                <ImageDropzone
-                  initialUrls={materialImages[m] ?? []}
-                  onChange={(urls) => onMaterialImagesChange(m, urls)}
                 />
               </div>
             ))}
@@ -228,6 +281,69 @@ function AddNew({
   );
 }
 
+function AddNewColor({ onAdd }: { onAdd: (name: string, hex: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [hex, setHex] = useState("#000000");
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 text-xs font-medium text-brand hover:underline"
+      >
+        + Add new
+      </button>
+    );
+  }
+
+  function submit() {
+    if (!name.trim()) return;
+    onAdd(name.trim(), hex);
+    setName("");
+    setHex("#000000");
+    setOpen(false);
+  }
+
+  return (
+    <div className="mt-2 flex gap-2">
+      <ColorPicker value={hex} onChange={setHex} />
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="New color name"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            submit();
+          }
+        }}
+        className={`${fieldClass} text-sm`}
+      />
+      <button
+        type="button"
+        onClick={submit}
+        className="shrink-0 rounded-md bg-foreground px-3 text-xs font-semibold text-white"
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setName("");
+          setOpen(false);
+        }}
+        aria-label="Cancel"
+        className="shrink-0 rounded-md border border-border px-3 text-xs text-muted"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export function ProductForm({
   initialProduct,
   submitLabel,
@@ -268,13 +384,11 @@ export function ProductForm({
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(initialProduct?.materials ?? []);
   const [images, setImages] = useState<string[]>(initialProduct?.images ? [...initialProduct.images] : []);
   const [sizePrices, setSizePrices] = useState<Record<string, number>>(initialProduct?.sizePrices ?? {});
+  const [sizeDiscounts, setSizeDiscounts] = useState<Record<string, number>>(initialProduct?.sizeDiscounts ?? {});
   const [materialPrices, setMaterialPrices] = useState<Record<string, number>>(
     initialProduct?.materialPrices ?? {},
   );
   const [colorImages, setColorImages] = useState<Record<string, string[]>>(initialProduct?.colorImages ?? {});
-  const [materialImages, setMaterialImages] = useState<Record<string, string[]>>(
-    initialProduct?.materialImages ?? {},
-  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const selectedMain = mainCategories.find((c) => c.id === mainCategoryId);
@@ -322,14 +436,15 @@ export function ProductForm({
       colors: selectedColors,
       sizes: selectedSizes,
       materials: selectedMaterials,
-      sizePrices: Object.fromEntries(selectedSizes.map((s) => [s, sizePrices[s] ?? 0])),
+      sizePrices: Object.fromEntries(selectedSizes.map((s) => [s, sizePrices[s] ?? (Number(price) || 0)])),
+      sizeDiscounts: Object.fromEntries(
+        selectedSizes.filter((s) => sizeDiscounts[s] != null).map((s) => [s, sizeDiscounts[s]]),
+      ),
       materialPrices: Object.fromEntries(selectedMaterials.map((m) => [m, materialPrices[m] ?? 0])),
       colorImages: Object.fromEntries(
         selectedColors.map((c) => [c, colorImages[c] ?? []]).filter(([, v]) => (v as string[]).length > 0),
       ),
-      materialImages: Object.fromEntries(
-        selectedMaterials.map((m) => [m, materialImages[m] ?? []]).filter(([, v]) => (v as string[]).length > 0),
-      ),
+      materialImages: {},
     };
     setSubmitting(true);
     try {
@@ -349,9 +464,6 @@ export function ProductForm({
         : previewBasePrice * (1 - Number(discountValue || 0) / 100),
     ),
   );
-  const previewProfit = previewFinalPrice - Number(costPrice || 0);
-  const previewMarginPct = previewFinalPrice > 0 ? Math.round((previewProfit / previewFinalPrice) * 100) : 0;
-
   return (
     <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
@@ -558,15 +670,20 @@ export function ProductForm({
               <span className={labelClass}>Colors *</span>
               <div className="flex flex-wrap gap-2">
                 {colors.map((c) => (
-                  <TagToggle key={c} label={c} active={selectedColors.includes(c)} onClick={() => toggleColor(c)} />
+                  <TagToggle
+                    key={c.name}
+                    label={c.name}
+                    swatch={c.hex}
+                    active={selectedColors.includes(c.name)}
+                    onClick={() => toggleColor(c.name)}
+                  />
                 ))}
               </div>
               <FieldError message={fieldErrors.colors} />
-              <AddNew
-                placeholder="New color name"
-                onAdd={(v) => {
-                  addColor(v);
-                  setSelectedColors((prev) => [...prev, v]);
+              <AddNewColor
+                onAdd={(name, hex) => {
+                  addColor(name, hex);
+                  setSelectedColors((prev) => [...prev, name]);
                 }}
               />
             </div>
@@ -614,14 +731,45 @@ export function ProductForm({
         {selectedSizes.length > 0 && (
           <div className={cardClass}>
             <h2 className="mb-1 text-sm font-bold uppercase tracking-wide">Size Pricing</h2>
-            <p className="mb-4 text-xs text-muted">Extra charge added on top of the base price for each size.</p>
+            <p className="mb-4 text-xs text-muted">
+              Exact price for each size — replaces the base price entirely (not added on top).
+            </p>
             <div className="space-y-2">
               {selectedSizes.map((s) => (
-                <PriceDeltaRow
+                <SizePriceRow
                   key={s}
                   label={s}
-                  value={sizePrices[s] ?? 0}
+                  value={sizePrices[s]}
+                  basePrice={Number(price) || 0}
                   onChange={(v) => setSizePrices((prev) => ({ ...prev, [s]: v }))}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedSizes.length > 0 && (
+          <div className={cardClass}>
+            <h2 className="mb-1 text-sm font-bold uppercase tracking-wide">Size Discounts</h2>
+            <p className="mb-4 text-xs text-muted">
+              Override the overall discount for a specific size. Leave blank to use the overall discount below.
+            </p>
+            <div className="space-y-2">
+              {selectedSizes.map((s) => (
+                <SizeDiscountRow
+                  key={s}
+                  label={s}
+                  value={sizeDiscounts[s]}
+                  unit={discountType === "percent" ? "%" : "K"}
+                  overallValue={Number(discountValue) || 0}
+                  onChange={(v) => setSizeDiscounts((prev) => ({ ...prev, [s]: v }))}
+                  onClear={() =>
+                    setSizeDiscounts((prev) => {
+                      const next = { ...prev };
+                      delete next[s];
+                      return next;
+                    })
+                  }
                 />
               ))}
             </div>
@@ -670,15 +818,6 @@ export function ProductForm({
               {price ? formatMMK(Number(price)) : "K0"}
             </p>
           )}
-          {Number(costPrice) > 0 && (
-            <p className="mt-2 border-t border-border pt-2 text-xs text-muted">
-              Profit:{" "}
-              <span className={previewProfit >= 0 ? "font-semibold text-emerald-600" : "font-semibold text-brand"}>
-                {formatMMK(previewProfit)}
-              </span>{" "}
-              ({previewMarginPct}%)
-            </p>
-          )}
           {Number(stock) <= 0 ? (
             <p className="mt-2 text-xs font-semibold text-brand">Out of stock</p>
           ) : Number(stock) <= Number(lowStockThreshold || 0) ? (
@@ -697,9 +836,6 @@ export function ProductForm({
             colors={selectedColors}
             colorImages={colorImages}
             onColorImagesChange={(c, urls) => setColorImages((prev) => ({ ...prev, [c]: urls }))}
-            materials={selectedMaterials}
-            materialImages={materialImages}
-            onMaterialImagesChange={(m, urls) => setMaterialImages((prev) => ({ ...prev, [m]: urls }))}
           />
         </div>
 

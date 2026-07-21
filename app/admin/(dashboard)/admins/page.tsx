@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAdminSession } from "@/lib/use-admin-session";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Skeleton } from "@/components/skeleton";
+import { roleLabel } from "@/lib/roles";
 
 const fieldClass =
   "w-full rounded-md border border-border px-3 py-2 text-sm outline-none transition-colors focus:border-brand";
@@ -63,7 +64,7 @@ function CreateAdminForm({ onCreated }: { onCreated: (u: AdminUserRow) => void }
         />
         <select value={role} onChange={(e) => setRole(e.target.value as typeof role)} className={fieldClass}>
           <option value="admin">Admin</option>
-          <option value="super_admin">Super Admin</option>
+          <option value="super_admin">Owner</option>
         </select>
       </div>
       {error && <p className="mt-2 text-sm text-brand">{error}</p>}
@@ -227,11 +228,11 @@ export default function AdminAdminsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         u.role === "super_admin" ? "bg-brand/10 text-brand" : "bg-zinc-100 text-muted"
                       }`}
                     >
-                      {u.role.replace("_", " ")}
+                      {roleLabel(u.role)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>

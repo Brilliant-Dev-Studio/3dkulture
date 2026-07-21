@@ -184,7 +184,6 @@ export default function AdminOrderDetailPage() {
 
   const isPdf = order.invoiceName?.toLowerCase().endsWith(".pdf");
   const totalUnits = order.items.reduce((n, i) => n + i.qty, 0);
-  const totalProfit = order.items.reduce((s, i) => s + (i.price - i.costPrice) * i.qty, 0);
 
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
@@ -277,10 +276,6 @@ export default function AdminOrderDetailPage() {
               </table>
             </div>
             <div className="space-y-1.5 border-t border-border bg-zinc-50 px-5 py-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted">Profit</span>
-                <span className="font-medium text-emerald-600">{formatMMK(totalProfit)}</span>
-              </div>
               <div className="flex justify-between text-base font-bold">
                 <span>Total</span>
                 <span className="text-brand">{formatMMK(order.total)}</span>

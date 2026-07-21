@@ -5,8 +5,6 @@ import type { Category, Product } from "./types";
 
 export function useFilterOptions() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
-  const [sizes, setSizes] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(1000000);
 
@@ -14,12 +12,6 @@ export function useFilterOptions() {
     fetch("/api/categories")
       .then((r) => r.json())
       .then(setCategories);
-    fetch("/api/colors")
-      .then((r) => r.json())
-      .then(setColors);
-    fetch("/api/sizes")
-      .then((r) => r.json())
-      .then(setSizes);
     fetch("/api/products")
       .then((r) => r.json())
       .then((products: Product[]) => {
@@ -29,5 +21,5 @@ export function useFilterOptions() {
       });
   }, []);
 
-  return { categories, colors, sizes, minPrice, maxPrice };
+  return { categories, minPrice, maxPrice };
 }

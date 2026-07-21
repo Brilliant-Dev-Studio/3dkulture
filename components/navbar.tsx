@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart-context";
 import { useFilterDrawer } from "@/lib/filter-drawer-context";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSwitcher } from "./language-switcher";
+import { Container } from "./container";
 
 export function Navbar() {
   const router = useRouter();
@@ -46,45 +47,51 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white/90 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 py-3 sm:px-6">
+      <Container className="flex flex-wrap items-center gap-4 py-3 sm:grid sm:grid-cols-[auto_1fr_auto] sm:gap-6">
         <Link href="/" className="shrink-0">
           <Image src="/logo.png" alt="3D Kulture" width={200} height={195} className="h-14 w-auto" priority />
         </Link>
 
-        <form onSubmit={onSubmit} className="order-3 w-full sm:order-2 sm:max-w-md sm:flex-1">
-          <div className="flex items-center gap-2 rounded-full border border-border bg-zinc-50 px-4 py-2.5 transition-colors focus-within:border-brand focus-within:bg-white">
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              className="h-4 w-4 shrink-0 text-muted"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
+        <form onSubmit={onSubmit} className="order-3 w-full sm:order-0 sm:mx-auto sm:w-full sm:max-w-xl">
+          <div className="flex items-stretch overflow-hidden rounded-[20px] border border-border bg-zinc-100 transition-colors focus-within:border-brand">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               type="search"
               placeholder={t("nav.search")}
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
+              className="w-full min-w-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted"
             />
             {query && (
               <button
                 type="button"
                 aria-label="Clear search"
                 onClick={() => setQuery("")}
-                className="shrink-0 text-muted hover:text-brand"
+                className="shrink-0 px-2 text-muted hover:text-brand"
               >
                 ✕
               </button>
             )}
+            <button
+              type="submit"
+              aria-label="Search"
+              className="flex shrink-0 items-center justify-center bg-brand px-5 text-white transition-colors hover:bg-brand-dark"
+            >
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="h-4.5 w-4.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+            </button>
           </div>
         </form>
 
-        <div className="order-2 ml-auto flex items-center gap-4 sm:order-3">
+        <div className="order-2 ml-auto flex items-center gap-4 sm:order-0 sm:ml-0">
           <LanguageSwitcher />
           {pathname === "/" && (
             <button
@@ -128,7 +135,7 @@ export function Navbar() {
             )}
           </Link>
         </div>
-      </div>
+      </Container>
     </header>
   );
 }

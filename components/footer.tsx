@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { T } from "./t";
+import { Container } from "./container";
 
 const CONTACT = {
   phone: "+959 784 400 410",
@@ -35,7 +36,7 @@ function FacebookIcon() {
 export function Footer() {
   return (
     <footer className="border-t border-border bg-foreground">
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-4 py-12 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:text-left sm:px-6">
+      <Container className="flex flex-col items-center gap-8 py-12 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:text-left">
         <Image
           src="/logo.png"
           alt="3D Kulture"
@@ -67,7 +68,7 @@ export function Footer() {
         <p className="text-xs uppercase tracking-[0.15em] text-white/50">
           &copy; {new Date().getFullYear()} 3D Kulture — <T k="footer.rights" />
         </p>
-      </div>
+      </Container>
     </footer>
   );
 }

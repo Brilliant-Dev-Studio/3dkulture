@@ -61,6 +61,7 @@ const RAW_PRODUCTS: Omit<
   Product,
   | "materials"
   | "sizePrices"
+  | "sizeDiscounts"
   | "materialPrices"
   | "colorImages"
   | "materialImages"
@@ -164,6 +165,7 @@ export const BASE_PRODUCTS: Product[] = RAW_PRODUCTS.map((p) => ({
   ...p,
   materials: MATERIALS,
   sizePrices: Object.fromEntries(p.sizes.map((s) => [s, SIZE_PRICES[s] ?? 0])),
+  sizeDiscounts: {},
   materialPrices: Object.fromEntries(MATERIALS.map((m) => [m, MATERIAL_PRICES[m] ?? 0])),
   colorImages: {},
   materialImages: {},

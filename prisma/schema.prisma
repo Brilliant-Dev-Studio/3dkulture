@@ -41,6 +41,7 @@ model Category {
 model Color {
   id   String @id @default(cuid())
   name String @unique
+  hex  String @default("#000000")
 }
 
 model Size {
@@ -51,6 +52,17 @@ model Size {
 model Material {
   id   String @id @default(cuid())
   name String @unique
+}
+
+model HeroSlide {
+  id        String   @id @default(cuid())
+  image     String
+  badge     String   @default("")
+  title     String
+  subtitle  String   @default("")
+  linkUrl   String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Product {
@@ -69,6 +81,7 @@ model Product {
   sizes          String[]
   materials      String[]
   sizePrices     Json     @default("{}")
+  sizeDiscounts  Json     @default("{}")
   materialPrices Json     @default("{}")
   colorImages    Json     @default("{}")
   materialImages Json     @default("{}")

@@ -6,7 +6,15 @@ import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { formatMMK } from "@/lib/format";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  rank,
+  soldLabel,
+}: {
+  product: Product;
+  rank?: number;
+  soldLabel?: string;
+}) {
   const [imgIndex, setImgIndex] = useState(0);
   const count = product.images.length;
   const hasDiscount = product.discountValue > 0;
@@ -28,8 +36,11 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <Link href={`/product/${product.id}`} className="group block">
-      <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100 transition-shadow duration-300 group-hover:shadow-lg">
+    <Link
+      href={`/product/${product.id}`}
+      className="group block overflow-hidden rounded-[20px] border border-border bg-white transition-shadow duration-300 hover:shadow-md"
+    >
+      <div className="relative aspect-square overflow-hidden bg-zinc-100">
         <Image
           src={product.images[imgIndex]}
           alt={product.title}
@@ -39,8 +50,18 @@ export function ProductCard({ product }: { product: Product }) {
         />
 
         {hasDiscount && (
-          <span className="absolute left-2 top-2 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="absolute left-2 top-2 rounded-md bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
             {discountLabel}
+          </span>
+        )}
+
+        {rank !== undefined && (
+          <span
+            className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm ring-1 ring-white/40 ${
+              rank <= 3 ? "bg-brand" : "bg-foreground/80"
+            }`}
+          >
+            {rank}
           </span>
         )}
 
@@ -75,7 +96,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
 
-      <div className="pt-3.5">
+      <div className="p-3.5">
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
           {product.category}
         </p>
@@ -83,13 +104,14 @@ export function ProductCard({ product }: { product: Product }) {
           {product.title}
         </p>
         {hasDiscount ? (
-          <p className="mt-1 flex items-center gap-1.5">
-            <span className="text-base font-semibold text-brand">{formatMMK(discountedPrice)}</span>
-            <span className="text-xs text-muted line-through">{formatMMK(product.price)}</span>
-          </p>
+          <div className="mt-1">
+            <p className="text-xl font-bold text-brand">{formatMMK(discountedPrice)}</p>
+            <p className="text-xs text-muted line-through">{formatMMK(product.price)}</p>
+          </div>
         ) : (
-          <p className="mt-1 text-base font-semibold text-foreground">{formatMMK(product.price)}</p>
+          <p className="mt-1 text-lg font-bold text-foreground">{formatMMK(product.price)}</p>
         )}
+        {soldLabel && <p className="mt-0.5 text-[11px] text-muted">{soldLabel}</p>}
       </div>
     </Link>
   );
@@ -97,9 +119,9 @@ export function ProductCard({ product }: { product: Product }) {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="animate-pulse">
-      <div className="aspect-square rounded-xl bg-zinc-200" />
-      <div className="pt-3 space-y-2">
+    <div className="animate-pulse overflow-hidden rounded-[20px] border border-border bg-white">
+      <div className="aspect-square bg-zinc-200" />
+      <div className="space-y-2 p-3.5">
         <div className="h-4 w-1/3 rounded bg-zinc-200" />
         <div className="h-4 w-3/4 rounded bg-zinc-200" />
         <div className="h-3 w-1/2 rounded bg-zinc-200" />

@@ -33,6 +33,11 @@ const NAV = [
     icon: "M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm9 0v5h5M9 13h6M9 17h6M9 9h2",
   },
   {
+    href: "/admin/hero",
+    label: "Hero Slides",
+    icon: "M3 4h18v13H3z M7 20h10 M8 8l3 3-3 3 M16 8l-3 3 3 3",
+  },
+  {
     href: "/admin/admins",
     label: "Admins",
     icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 3.13a4 4 0 0 1 0 7.75M16 3.13a4 4 0 0 1 0 7.75",

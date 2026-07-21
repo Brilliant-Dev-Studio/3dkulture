@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAdminSession } from "@/lib/use-admin-session";
+import { roleLabel } from "@/lib/roles";
 
 const fieldClass =
   "w-full rounded-md border border-border px-3 py-2 text-sm outline-none transition-colors focus:border-brand";
@@ -54,7 +55,7 @@ export default function AdminAccountPage() {
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6">
       <h1 className="mb-1 text-xl font-bold">Account</h1>
       <p className="mb-6 text-sm text-muted">
-        {email} <span className="capitalize text-xs text-muted">· {role?.replace("_", " ")}</span>
+        {email} {role && <span className="text-xs text-muted">· {roleLabel(role)}</span>}
       </p>
 
       <form onSubmit={onSubmit} className={`${cardClass} space-y-4`}>

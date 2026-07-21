@@ -25,38 +25,6 @@ function useFilterParam(key: string) {
   return { values, toggle };
 }
 
-function FilterGroup({
-  title,
-  paramKey,
-  options,
-}: {
-  title: string;
-  paramKey: string;
-  options: string[];
-}) {
-  const { values, toggle } = useFilterParam(paramKey);
-
-  return (
-    <AccordionSection title={title}>
-      <ul className="scroll-thin max-h-44 space-y-2 overflow-y-auto pr-1">
-        {options.map((option) => (
-          <li key={option}>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
-                checked={values.includes(option)}
-                onChange={() => toggle(option)}
-                className="h-4 w-4 shrink-0 accent-brand"
-              />
-              <span className={values.includes(option) ? "font-semibold" : ""}>{option}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
-    </AccordionSection>
-  );
-}
-
 function CategoryFilterGroup({ title, categories }: { title: string; categories: Category[] }) {
   const { values, toggle } = useFilterParam("category");
   const mains = categories.filter((c) => !c.parentId);
@@ -69,15 +37,7 @@ function CategoryFilterGroup({ title, categories }: { title: string; categories:
           const subs = subsOf(main);
           return (
             <li key={main.id}>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={values.includes(main.name)}
-                  onChange={() => toggle(main.name)}
-                  className="h-4 w-4 shrink-0 accent-brand"
-                />
-                <span className={values.includes(main.name) ? "font-semibold" : "font-medium"}>{main.name}</span>
-              </label>
+              <span className="block text-sm font-medium text-foreground">{main.name}</span>
               {subs.length > 0 && (
                 <ul className="mt-1.5 space-y-1.5 pl-6">
                   {subs.map((sub) => (
@@ -147,7 +107,7 @@ function PriceRangeFilter({ minPrice, maxPrice }: { minPrice: number; maxPrice: 
             max={max}
             onChange={(e) => setMin(Number(e.target.value))}
             onBlur={() => commit(Math.max(minPrice, Math.min(min, max)), max)}
-            className="w-full rounded border border-border py-2 pl-6 pr-2 text-sm"
+            className="w-full rounded-xl border border-border py-2 pl-6 pr-2 text-sm"
           />
         </div>
         <span className="text-muted">–</span>
@@ -162,7 +122,7 @@ function PriceRangeFilter({ minPrice, maxPrice }: { minPrice: number; maxPrice: 
             max={maxPrice}
             onChange={(e) => setMax(Number(e.target.value))}
             onBlur={() => commit(min, Math.min(maxPrice, Math.max(max, min)))}
-            className="w-full rounded border border-border py-2 pl-6 pr-2 text-sm"
+            className="w-full rounded-xl border border-border py-2 pl-6 pr-2 text-sm"
           />
         </div>
       </div>
@@ -206,14 +166,10 @@ function PriceRangeFilter({ minPrice, maxPrice }: { minPrice: number; maxPrice: 
 
 function FilterFields({
   categories,
-  colors,
-  sizes,
   minPrice,
   maxPrice,
 }: {
   categories: Category[];
-  colors: string[];
-  sizes: string[];
   minPrice: number;
   maxPrice: number;
 }) {
@@ -222,8 +178,6 @@ function FilterFields({
     <>
       <PriceRangeFilter minPrice={minPrice} maxPrice={maxPrice} />
       <CategoryFilterGroup title={t("filter.category")} categories={categories} />
-      <FilterGroup title={t("filter.color")} paramKey="color" options={colors} />
-      <FilterGroup title={t("filter.size")} paramKey="size" options={sizes} />
     </>
   );
 }
@@ -233,10 +187,8 @@ export function FilterSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { open: mobileOpen, setOpen: setMobileOpen } = useFilterDrawer();
-  const { categories, colors, sizes, minPrice, maxPrice } = useFilterOptions();
-  const hasFilters = ["category", "color", "size", "priceMin", "priceMax"].some(
-    (k) => searchParams.getAll(k).length,
-  );
+  const { categories, minPrice, maxPrice } = useFilterOptions();
+  const hasFilters = ["category", "priceMin", "priceMax"].some((k) => searchParams.getAll(k).length);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -248,8 +200,6 @@ export function FilterSidebar() {
   function clearAll() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("category");
-    params.delete("color");
-    params.delete("size");
     params.delete("priceMin");
     params.delete("priceMax");
     router.push(`/?${params.toString()}`);
@@ -258,8 +208,8 @@ export function FilterSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 sm:block">
-        <div className="scroll-thin sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+      <aside className="hidden w-72 shrink-0 sm:block">
+        <div className="scroll-thin sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-[20px] border border-border bg-white p-5">
           <div className="mb-1 flex items-center justify-between">
             <h2 className="text-lg font-medium">{t("filter.title")}</h2>
             {hasFilters && (
@@ -268,7 +218,7 @@ export function FilterSidebar() {
               </button>
             )}
           </div>
-          <FilterFields categories={categories} colors={colors} sizes={sizes} minPrice={minPrice} maxPrice={maxPrice} />
+          <FilterFields categories={categories} minPrice={minPrice} maxPrice={maxPrice} />
         </div>
       </aside>
 
@@ -309,7 +259,7 @@ export function FilterSidebar() {
             </button>
           </div>
           <div className="scroll-thin flex-1 overflow-y-auto px-4">
-            <FilterFields categories={categories} colors={colors} sizes={sizes} minPrice={minPrice} maxPrice={maxPrice} />
+            <FilterFields categories={categories} minPrice={minPrice} maxPrice={maxPrice} />
           </div>
           <div className="border-t border-border p-4">
             <button

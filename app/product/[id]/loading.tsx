@@ -1,6 +1,8 @@
+import { Container } from "@/components/container";
+
 export default function Loading() {
   return (
-    <div className="mx-auto w-full max-w-6xl animate-pulse px-4 py-8 sm:px-6">
+    <Container className="animate-pulse py-8">
       <div className="grid gap-10 sm:grid-cols-2">
         <div className="aspect-square bg-zinc-200" />
         <div className="space-y-4">
@@ -11,6 +13,6 @@ export default function Loading() {
           <div className="h-12 w-full rounded-full bg-zinc-200" />
         </div>
       </div>
-    </div>
+    </Container>
   );
 }

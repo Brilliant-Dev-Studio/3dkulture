@@ -10,6 +10,7 @@ import { getFinalPrice } from "@/lib/pricing";
 import { InvoiceDropzone } from "@/components/invoice-dropzone";
 import { useI18n } from "@/lib/i18n";
 import { Skeleton } from "@/components/skeleton";
+import { Container } from "@/components/container";
 
 const fieldClass =
   "w-full rounded-[25px] border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10";
@@ -95,7 +96,7 @@ export default function CheckoutPage() {
 
   if (placed) {
     return (
-      <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-4 text-center sm:px-6">
+      <Container size="xl" className="flex min-h-[70vh] flex-col items-center justify-center text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-3xl text-emerald-500">
           ✓
         </div>
@@ -107,13 +108,13 @@ export default function CheckoutPage() {
         >
           {t("cart.continueShopping")}
         </Link>
-      </div>
+      </Container>
     );
   }
 
   if (loading && lines.length > 0) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <Container className="py-8">
         <Skeleton className="mb-4 h-4 w-24" />
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
@@ -131,19 +132,19 @@ export default function CheckoutPage() {
             <Skeleton className="h-16 w-full" />
           </div>
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center sm:px-6">
+      <Container size="xl" className="py-20 text-center">
         <h1 className="text-xl font-bold">{t("checkout.emptyTitle")}</h1>
         <p className="mt-2 text-sm text-muted">{t("checkout.emptyBody")}</p>
         <Link href="/" className="mt-4 inline-block text-sm font-medium text-brand">
           {t("cart.continueShopping")}
         </Link>
-      </div>
+      </Container>
     );
   }
 
@@ -187,7 +188,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-full bg-zinc-50">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <Container className="py-8">
         <Link
           href="/cart"
           className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-brand"
@@ -343,7 +344,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </form>
-      </div>
+      </Container>
     </div>
   );
 }

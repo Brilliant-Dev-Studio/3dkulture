@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -59,11 +59,141 @@ function monthLabel(monthKey: string) {
   return new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
+function mondayOf(date: Date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function weekKeyOf(dateStr: string) {
+  const m = mondayOf(new Date(dateStr));
+  return `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}-${String(m.getDate()).padStart(2, "0")}`;
+}
+
+function weekLabel(weekKey: string) {
+  const start = new Date(weekKey);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const startStr = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const endStr = end.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return `${startStr} – ${endStr}`;
+}
+
+function daysInWeek(weekKey: string) {
+  const start = new Date(weekKey);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+}
+
+function PeriodDropdown({
+  period,
+  onChange,
+  availableWeeks,
+  availableMonths,
+}: {
+  period: string;
+  onChange: (v: string) => void;
+  availableWeeks: string[];
+  availableMonths: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onOutside(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+
+  function select(v: string) {
+    onChange(v);
+    setOpen(false);
+  }
+
+  function Row({ value, label }: { value: string; label: string }) {
+    const active = value === period;
+    return (
+      <button
+        type="button"
+        onClick={() => select(value)}
+        className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm ${
+          active ? "font-semibold text-foreground" : "text-foreground hover:bg-zinc-50"
+        }`}
+      >
+        <span className="w-4 shrink-0">{active ? "✓" : ""}</span>
+        {label}
+      </button>
+    );
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:border-brand"
+      >
+        {periodLabel(period)}
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          className={`h-3.5 w-3.5 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="scroll-thin absolute right-0 top-full z-20 mt-1 max-h-80 w-56 overflow-y-auto rounded-md border border-border bg-white p-1.5 shadow-lg">
+          <Row value="all" label="All time" />
+
+          {availableWeeks.length > 0 && (
+            <>
+              <p className="mt-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Weeks</p>
+              {availableWeeks.map((w) => (
+                <Row key={w} value={`week:${w}`} label={weekLabel(w)} />
+              ))}
+            </>
+          )}
+
+          {availableMonths.length > 0 && (
+            <>
+              <p className="mt-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Months</p>
+              {availableMonths.map((m) => (
+                <Row key={m} value={`month:${m}`} label={monthLabel(m)} />
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function periodLabel(period: string) {
+  if (period === "all") return "All time";
+  if (period.startsWith("month:")) return monthLabel(period.slice(6));
+  if (period.startsWith("week:")) return weekLabel(period.slice(5));
+  return period;
+}
+
 export default function AdminDashboardHomePage() {
   const { products, loading: productsLoading } = useAdminStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
-  const [month, setMonth] = useState("all");
+  const [period, setPeriod] = useState("all");
 
   useEffect(() => {
     fetch("/api/orders")
@@ -77,21 +207,24 @@ export default function AdminDashboardHomePage() {
   const availableMonths = Array.from(new Set(orders.map((o) => monthKeyOf(o.createdAt)))).sort((a, b) =>
     b.localeCompare(a),
   );
+  const availableWeeks = Array.from(new Set(orders.map((o) => weekKeyOf(o.createdAt)))).sort((a, b) =>
+    b.localeCompare(a),
+  );
 
-  const filteredOrders = month === "all" ? orders : orders.filter((o) => monthKeyOf(o.createdAt) === month);
+  const filteredOrders =
+    period === "all"
+      ? orders
+      : orders.filter((o) =>
+          period.startsWith("month:") ? monthKeyOf(o.createdAt) === period.slice(6) : weekKeyOf(o.createdAt) === period.slice(5),
+        );
 
   const revenue = filteredOrders.reduce((sum, o) => sum + o.total, 0);
-  const profit = filteredOrders.reduce(
-    (sum, o) => sum + o.items.reduce((s, i) => s + (i.price - i.costPrice) * i.qty, 0),
-    0,
-  );
   const pending = filteredOrders.filter((o) => o.status === "pending").length;
 
   const stats = [
     { label: "Products", value: products.length },
     { label: "Orders", value: filteredOrders.length },
     { label: "Revenue", value: formatMMK(revenue) },
-    { label: "Profit", value: formatMMK(profit) },
     { label: "Pending Invoices", value: pending },
   ];
 
@@ -107,7 +240,11 @@ export default function AdminDashboardHomePage() {
     (a, b) => b.total - a.total,
   );
 
-  const days = month === "all" ? lastNDays(14) : daysInMonth(month);
+  const days = period === "all"
+    ? lastNDays(14)
+    : period.startsWith("month:")
+      ? daysInMonth(period.slice(6))
+      : daysInWeek(period.slice(5));
   const trendData = days.map((d) => {
     const key = d.toDateString();
     const dayOrders = filteredOrders.filter((o) => new Date(o.createdAt).toDateString() === key);
@@ -117,12 +254,11 @@ export default function AdminDashboardHomePage() {
     };
   });
 
-  const productRevenue = new Map<string, { title: string; revenue: number; profit: number; units: number }>();
+  const productRevenue = new Map<string, { title: string; revenue: number; units: number }>();
   for (const o of filteredOrders) {
     for (const item of o.items) {
-      const entry = productRevenue.get(item.productId) ?? { title: item.title, revenue: 0, profit: 0, units: 0 };
+      const entry = productRevenue.get(item.productId) ?? { title: item.title, revenue: 0, units: 0 };
       entry.revenue += item.price * item.qty;
-      entry.profit += (item.price - item.costPrice) * item.qty;
       entry.units += item.qty;
       productRevenue.set(item.productId, entry);
     }
@@ -140,22 +276,16 @@ export default function AdminDashboardHomePage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Dashboard</h1>
         <div className="flex items-center gap-3">
-          <select
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-brand"
-          >
-            <option value="all">All time</option>
-            {availableMonths.map((m) => (
-              <option key={m} value={m}>
-                {monthLabel(m)}
-              </option>
-            ))}
-          </select>
+          <PeriodDropdown
+            period={period}
+            onChange={setPeriod}
+            availableWeeks={availableWeeks}
+            availableMonths={availableMonths}
+          />
           <ExportCsvButton
             onClick={() =>
-              downloadCsv(`orders-${month}.csv`, [
-                ["Order ID", "Customer", "Phone", "Address", "Status", "Date", "Items", "Total", "Profit"],
+              downloadCsv(`orders-${period.replace(":", "-")}.csv`, [
+                ["Order ID", "Customer", "Phone", "Address", "Status", "Date", "Items", "Total"],
                 ...filteredOrders.map((o) => [
                   o.id,
                   o.customerFullName,
@@ -165,7 +295,6 @@ export default function AdminDashboardHomePage() {
                   new Date(o.createdAt).toLocaleDateString(),
                   o.items.reduce((n, i) => n + i.qty, 0),
                   o.total,
-                  o.items.reduce((s, i) => s + (i.price - i.costPrice) * i.qty, 0),
                 ]),
               ])
             }
@@ -176,9 +305,9 @@ export default function AdminDashboardHomePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {dataLoading
-          ? Array.from({ length: 5 }).map((_, i) => (
+          ? Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="rounded-md border border-border bg-white p-4">
                 <Skeleton className="h-3 w-20" />
                 <Skeleton className="mt-2 h-7 w-16" />
@@ -199,7 +328,7 @@ export default function AdminDashboardHomePage() {
             {categoryData.length > 0 && (
               <ExportCsvButton
                 onClick={() =>
-                  downloadCsv(`revenue-by-category-${month}.csv`, [
+                  downloadCsv(`revenue-by-category-${period.replace(":", "-")}.csv`, [
                     ["Category", "Revenue"],
                     ...categoryData.map((c) => [c.category, c.total]),
                   ])
@@ -226,7 +355,7 @@ export default function AdminDashboardHomePage() {
 
         <div className="rounded-md border border-border bg-white p-5">
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide">
-            Orders {month === "all" ? "(Last 14 Days)" : `(${monthLabel(month)})`}
+            Orders {period === "all" ? "(Last 14 Days)" : `(${periodLabel(period)})`}
           </h2>
           {dataLoading ? (
             <Skeleton className="h-65 w-full" />
@@ -250,9 +379,9 @@ export default function AdminDashboardHomePage() {
           {topProducts.length > 0 && (
             <ExportCsvButton
               onClick={() =>
-                downloadCsv(`top-products-${month}.csv`, [
-                  ["Product", "Units Sold", "Revenue", "Profit"],
-                  ...topProducts.map((p) => [p.title, p.units, p.revenue, p.profit]),
+                downloadCsv(`top-products-${period.replace(":", "-")}.csv`, [
+                  ["Product", "Units Sold", "Revenue"],
+                  ...topProducts.map((p) => [p.title, p.units, p.revenue]),
                 ])
               }
             />
@@ -264,7 +393,6 @@ export default function AdminDashboardHomePage() {
               <th className="py-2 font-semibold">Product</th>
               <th className="py-2 font-semibold">Units Sold</th>
               <th className="py-2 font-semibold">Revenue</th>
-              <th className="py-2 font-semibold">Profit</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -280,9 +408,6 @@ export default function AdminDashboardHomePage() {
                   <td className="py-2">
                     <Skeleton className="h-4 w-16" />
                   </td>
-                  <td className="py-2">
-                    <Skeleton className="h-4 w-16" />
-                  </td>
                 </tr>
               ))}
             {!dataLoading && topProducts.map((p) => (
@@ -290,12 +415,11 @@ export default function AdminDashboardHomePage() {
                 <td className="py-2 font-medium text-foreground">{p.title}</td>
                 <td className="py-2 text-muted">{p.units}</td>
                 <td className="py-2 font-medium">{formatMMK(p.revenue)}</td>
-                <td className="py-2 font-medium text-emerald-600">{formatMMK(p.profit)}</td>
               </tr>
             ))}
             {!dataLoading && topProducts.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-muted">
+                <td colSpan={3} className="py-8 text-center text-muted">
                   No sales yet.
                 </td>
               </tr>

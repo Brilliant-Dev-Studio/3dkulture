@@ -59,6 +59,7 @@ export async function POST(request: Request) {
       sizes: body.sizes ?? [],
       materials: body.materials ?? [],
       sizePrices: body.sizePrices ?? {},
+      sizeDiscounts: body.sizeDiscounts ?? {},
       materialPrices: body.materialPrices ?? {},
       colorImages: body.colorImages ?? {},
       materialImages: body.materialImages ?? {},

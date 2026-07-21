@@ -10,9 +10,11 @@ const DICT = {
     "nav.filters": "Filters",
     "nav.home": "Home",
 
-    "hero.badge": "New Arrivals",
-    "hero.title": "Crafted In Every Dimension",
-    "hero.subtitle": "Premium 3D printed figures and collectibles, priced in MMK.",
+    "home.bestSelling": "Best Selling Products",
+    "home.bestSellingTag": "Trending now",
+    "home.allProducts": "All Products",
+    "home.shopNow": "Shop now",
+    "home.shopAll": "Shop all products",
 
     "filter.title": "Filters",
     "filter.clearAll": "Clear all",
@@ -23,6 +25,7 @@ const DICT = {
     "filter.showResults": "Show results",
     "filter.noResults": "No products match your search.",
 
+    "product.soldSuffix": "sold",
     "product.color": "Color",
     "product.size": "Size",
     "product.material": "Material",
@@ -42,7 +45,6 @@ const DICT = {
     "cart.price": "Price",
     "cart.quantity": "Quantity",
     "cart.subtotal": "Subtotal",
-    "cart.updateCart": "Update cart",
     "cart.orderNotes": "Order notes (optional)",
     "cart.orderNotesPlaceholder": "Notes about your order, e.g. delivery instructions",
     "cart.cartTotals": "Cart Totals",
@@ -80,9 +82,11 @@ const DICT = {
     "nav.filters": "စစ်ထုတ်ရန်",
     "nav.home": "ပင်မစာမျက်နှာ",
 
-    "hero.badge": "ကုန်ပစ္စည်းအသစ်များ",
-    "hero.title": "အလွှာတိုင်းတွင် အနုပညာ",
-    "hero.subtitle": "အရည်အသွေးမြင့် 3D Print ရုပ်ပုံများနှင့် စုဆောင်းစရာများ၊ MMK ဖြင့် ဈေးသတ်မှတ်ထား။",
+    "home.bestSelling": "အရောင်းရဆုံး ကုန်ပစ္စည်းများ",
+    "home.bestSellingTag": "လူကြိုက်များနေသည်",
+    "home.allProducts": "ကုန်ပစ္စည်းအားလုံး",
+    "home.shopNow": "ဝယ်ယူရန်",
+    "home.shopAll": "ကုန်ပစ္စည်းအားလုံးကြည့်ရန်",
 
     "filter.title": "စစ်ထုတ်ရန်",
     "filter.clearAll": "အားလုံးရှင်းမည်",
@@ -93,6 +97,7 @@ const DICT = {
     "filter.showResults": "ရလဒ်များကြည့်ရန်",
     "filter.noResults": "ရှာဖွေမှုနှင့် ကိုက်ညီသော ကုန်ပစ္စည်း မတွေ့ပါ။",
 
+    "product.soldSuffix": "ရောင်းပြီး",
     "product.color": "အရောင်",
     "product.size": "အရွယ်အစား",
     "product.material": "ပစ္စည်းအမျိုးအစား",
@@ -112,7 +117,6 @@ const DICT = {
     "cart.price": "ဈေးနှုန်း",
     "cart.quantity": "အရေအတွက်",
     "cart.subtotal": "စုစုပေါင်း (အခွန်မပါ)",
-    "cart.updateCart": "ခြင်းလှော် အသစ်ပြင်မည်",
     "cart.orderNotes": "အော်ဒါမှတ်ချက် (ရွေးချယ်ခွင့်)",
     "cart.orderNotesPlaceholder": "ပို့ဆောင်ရေးဆိုင်ရာ မှတ်ချက်များ ရေးထည့်ပါ",
     "cart.cartTotals": "စုစုပေါင်းငွေ",

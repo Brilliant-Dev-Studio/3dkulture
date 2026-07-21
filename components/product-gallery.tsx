@@ -11,7 +11,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
   return (
     <div className="min-w-0">
       <div
-        className="relative aspect-square w-full max-w-[605px] cursor-zoom-in overflow-hidden bg-zinc-100"
+        className="relative aspect-square w-full max-w-[605px] cursor-zoom-in overflow-hidden rounded-[20px] bg-zinc-100"
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;

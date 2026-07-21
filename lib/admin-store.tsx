@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Category, Product } from "./types";
+import type { Category, ColorSwatch, Product } from "./types";
 
 type AdminStoreValue = {
   products: Product[];
   categories: Category[];
-  colors: string[];
+  colors: ColorSwatch[];
   sizes: string[];
   materials: string[];
   loading: boolean;
@@ -15,7 +15,7 @@ type AdminStoreValue = {
   removeProduct: (id: string) => Promise<void>;
   addCategory: (name: string, parentId?: string | null) => Promise<Category>;
   removeCategory: (name: string) => Promise<void>;
-  addColor: (name: string) => Promise<void>;
+  addColor: (name: string, hex: string) => Promise<ColorSwatch>;
   removeColor: (name: string) => Promise<void>;
   addSize: (name: string) => Promise<void>;
   removeSize: (name: string) => Promise<void>;
@@ -33,7 +33,7 @@ async function json<T>(res: Response): Promise<T> {
 export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
+  const [colors, setColors] = useState<ColorSwatch[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     Promise.all([
       fetch("/api/products").then((r) => json<Product[]>(r)),
       fetch("/api/categories").then((r) => json<Category[]>(r)),
-      fetch("/api/colors").then((r) => json<string[]>(r)),
+      fetch("/api/colors").then((r) => json<ColorSwatch[]>(r)),
       fetch("/api/sizes").then((r) => json<string[]>(r)),
       fetch("/api/materials").then((r) => json<string[]>(r)),
     ])
@@ -98,17 +98,18 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       const fresh = await fetch("/api/categories").then((r) => json<Category[]>(r));
       setCategories(fresh);
     },
-    addColor: async (name) => {
-      await fetch("/api/colors", {
+    addColor: async (name, hex) => {
+      const created = await fetch("/api/colors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      }).then((r) => json(r));
-      setColors((prev) => (prev.includes(name) ? prev : [...prev, name]));
+        body: JSON.stringify({ name, hex }),
+      }).then((r) => json<ColorSwatch>(r));
+      setColors((prev) => (prev.some((c) => c.name === name) ? prev : [...prev, created]));
+      return created;
     },
     removeColor: async (name) => {
       await fetch(`/api/colors/${encodeURIComponent(name)}`, { method: "DELETE" }).then((r) => json(r));
-      setColors((prev) => prev.filter((c) => c !== name));
+      setColors((prev) => prev.filter((c) => c.name !== name));
     },
     addSize: async (name) => {
       await fetch("/api/sizes", {

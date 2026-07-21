@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 import { useI18n } from "@/lib/i18n";
 import { formatMMK } from "@/lib/format";
-import { getVariantPrice, getFinalPrice } from "@/lib/pricing";
+import { getVariantPrice, getFinalPrice, getDiscountValue } from "@/lib/pricing";
 import { ProductGallery } from "@/components/product-gallery";
 import { T } from "@/components/t";
+import { useColors } from "@/lib/use-colors";
 import type { Product } from "@/lib/types";
 
 export function ProductView({ product }: { product: Product }) {
   const { addLine } = useCart();
+  const colorSwatches = useColors();
+  const swatchByName = new Map(colorSwatches.map((c) => [c.name, c.hex]));
   const { t } = useI18n();
   const router = useRouter();
   const [color, setColor] = useState(product.colors[0] ?? "");
@@ -20,16 +23,11 @@ export function ProductView({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const extraImages = [
-    ...((color && product.colorImages[color]) || []),
-    ...((material && product.materialImages[material]) || []),
-  ];
+  const extraImages = (color && product.colorImages[color]) || [];
   const galleryImages = Array.from(new Set([...extraImages, ...product.images]));
   const unitPrice = getVariantPrice(product, size, material);
   const finalPrice = getFinalPrice(product, size, material);
-  const hasDiscount = product.discountValue > 0;
-  const discountLabel =
-    product.discountType === "fixed" ? `-${formatMMK(product.discountValue)}` : `-${product.discountValue}%`;
+  const hasDiscount = getDiscountValue(product, size) > 0;
 
   function addToCart() {
     addLine({ productId: product.id, color, size, material, qty });
@@ -37,29 +35,28 @@ export function ProductView({ product }: { product: Product }) {
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 sm:gap-10">
-      <ProductGallery key={`${color}-${material}`} images={galleryImages} alt={product.title} />
+      <ProductGallery key={color} images={galleryImages} alt={product.title} />
 
       <div className="sm:sticky sm:top-24 sm:self-start">
         <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted">{product.category}</span>
-        <h1 className="mt-2 text-3xl font-semibold leading-snug text-foreground">{product.title}</h1>
+        <h1 className="mt-2 text-2xl font-semibold leading-snug text-foreground sm:text-3xl">{product.title}</h1>
         {hasDiscount ? (
-          <div className="mt-3 flex items-center gap-3">
-            <p className="text-3xl font-semibold text-brand">{formatMMK(finalPrice)}</p>
-            <p className="text-lg text-muted line-through">{formatMMK(unitPrice)}</p>
-            <span className="rounded bg-brand px-2 py-1 text-xs font-bold text-white">{discountLabel}</span>
+          <div className="mt-3">
+            <p className="text-3xl font-bold text-brand sm:text-4xl">{formatMMK(finalPrice)}</p>
+            <p className="mt-1 text-sm text-muted line-through sm:text-base">{formatMMK(unitPrice)}</p>
           </div>
         ) : (
-          <p className="mt-3 text-3xl font-semibold text-foreground">{formatMMK(finalPrice)}</p>
+          <p className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">{formatMMK(finalPrice)}</p>
         )}
-        <p className="mt-4 text-sm leading-6 tracking-wide text-muted">{product.description}</p>
+        <p className="mt-4 wrap-break-word text-sm leading-6 tracking-wide text-muted">{product.description}</p>
 
         {product.stock <= 0 ? (
-          <div className="mt-4 rounded-md border border-dashed border-brand bg-brand/5 py-3 text-center text-sm font-medium text-brand">
+          <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm font-medium text-brand">
             {t("product.outOfStock")}
           </div>
         ) : (
           product.stock <= product.lowStockThreshold && (
-            <div className="mt-4 rounded-md border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
+            <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
               {t("product.lowStockPrefix")} <span className="font-bold">{product.stock}</span>{" "}
               {t("product.lowStockSuffix")}
             </div>
@@ -78,12 +75,20 @@ export function ProductView({ product }: { product: Product }) {
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                    aria-label={c}
+                    title={c}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
                       c === color
                         ? "border-2 border-foreground font-semibold text-foreground"
                         : "border-border text-foreground hover:border-foreground"
                     }`}
                   >
+                    {swatchByName.has(c) && (
+                      <span
+                        className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10"
+                        style={{ backgroundColor: swatchByName.get(c) }}
+                      />
+                    )}
                     {c}
                   </button>
                 ))}
@@ -102,14 +107,13 @@ export function ProductView({ product }: { product: Product }) {
                     key={s}
                     type="button"
                     onClick={() => setSize(s)}
-                    className={`min-w-11 rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                    className={`min-w-11 rounded-full border px-3 py-1.5 text-xs transition-colors ${
                       s === size
                         ? "border-2 border-foreground font-semibold text-foreground"
                         : "border-border text-foreground hover:border-foreground"
                     }`}
                   >
-                    {s}
-                    {product.sizePrices[s] ? ` (+${formatMMK(product.sizePrices[s])})` : ""}
+                    {s} · {formatMMK(product.sizePrices[s] ?? product.price)}
                   </button>
                 ))}
               </div>
@@ -127,7 +131,7 @@ export function ProductView({ product }: { product: Product }) {
                     key={m}
                     type="button"
                     onClick={() => setMaterial(m)}
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                       m === material
                         ? "border-2 border-foreground font-semibold text-foreground"
                         : "border-border text-foreground hover:border-foreground"
@@ -142,7 +146,7 @@ export function ProductView({ product }: { product: Product }) {
           )}
 
           <div className="flex items-stretch gap-3 pt-1">
-            <div className="flex items-center rounded-md border border-border">
+            <div className="flex items-center rounded-full border border-border">
               <button
                 type="button"
                 aria-label="Decrease quantity"
@@ -169,7 +173,7 @@ export function ProductView({ product }: { product: Product }) {
                 setAdded(true);
                 window.setTimeout(() => setAdded(false), 1500);
               }}
-              className="flex-1 rounded-md bg-brand text-xs font-semibold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark"
+              className="flex-1 rounded-full border border-brand text-[11px] font-semibold uppercase tracking-widest text-brand transition-colors hover:bg-brand hover:text-white"
             >
               {added ? t("product.addedToCart") : t("product.addToCart")}
             </button>
@@ -181,13 +185,13 @@ export function ProductView({ product }: { product: Product }) {
               addToCart();
               router.push("/checkout");
             }}
-            className="w-full rounded-md bg-foreground py-3 text-xs font-semibold uppercase tracking-widest text-white transition-colors hover:bg-black"
+            className="w-full rounded-full bg-brand py-4 text-sm font-bold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark"
           >
             {t("product.buyNow")}
           </button>
         </div>
 
-        <div className="mt-4 rounded-md border border-border px-4 py-3 text-center text-sm text-muted">
+        <div className="mt-4 rounded-2xl border border-border px-4 py-3 text-center text-sm text-muted">
           <T k="product.needHelp" />
         </div>
       </div>

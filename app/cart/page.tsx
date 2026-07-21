@@ -2,28 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useProducts } from "@/lib/use-products";
 import { formatMMK } from "@/lib/format";
 import { getFinalPrice } from "@/lib/pricing";
 import { useI18n } from "@/lib/i18n";
 import { Skeleton } from "@/components/skeleton";
+import { Container } from "@/components/container";
 
 export default function CartPage() {
   const { t } = useI18n();
   const { lines, removeLine, setQty } = useCart();
   const { products, loading } = useProducts();
-  const [draftQty, setDraftQty] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
 
   const items = lines
     .map((line, index) => ({ line, index, product: products.find((p) => p.id === line.productId) }))
     .filter((item) => item.product);
-
-  useEffect(() => {
-    setDraftQty(lines.map((l) => l.qty));
-  }, [lines]);
 
   const subtotal = items.reduce(
     (sum, { line, product }) =>
@@ -33,7 +29,7 @@ export default function CartPage() {
 
   if (loading && lines.length > 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <Container className="py-8">
         <Skeleton className="mb-6 h-6 w-24" />
         <div className="space-y-3">
           {lines.map((_, i) => (
@@ -47,29 +43,23 @@ export default function CartPage() {
             </div>
           ))}
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+      <Container size="3xl" className="py-16 text-center">
         <h1 className="text-xl font-bold">{t("cart.empty")}</h1>
         <Link href="/" className="mt-4 inline-block text-sm font-medium text-brand">
           {t("cart.continueShopping")}
         </Link>
-      </div>
+      </Container>
     );
   }
 
-  function applyUpdates() {
-    items.forEach(({ index }) => {
-      if (draftQty[index] != null) setQty(index, Math.max(1, draftQty[index]));
-    });
-  }
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <Container className="py-8">
       <h1 className="mb-6 text-xl font-bold">{t("cart.title")}</h1>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -110,37 +100,23 @@ export default function CartPage() {
                       <button
                         type="button"
                         aria-label="Decrease quantity"
-                        onClick={() =>
-                          setDraftQty((d) => {
-                            const next = [...d];
-                            next[index] = Math.max(1, (next[index] ?? line.qty) - 1);
-                            return next;
-                          })
-                        }
+                        onClick={() => setQty(index, Math.max(1, line.qty - 1))}
                         className="flex h-8 w-8 items-center justify-center text-base text-foreground"
                       >
                         −
                       </button>
-                      <span className="w-6 text-center text-sm font-semibold">
-                        {draftQty[index] ?? line.qty}
-                      </span>
+                      <span className="w-6 text-center text-sm font-semibold">{line.qty}</span>
                       <button
                         type="button"
                         aria-label="Increase quantity"
-                        onClick={() =>
-                          setDraftQty((d) => {
-                            const next = [...d];
-                            next[index] = (next[index] ?? line.qty) + 1;
-                            return next;
-                          })
-                        }
+                        onClick={() => setQty(index, line.qty + 1)}
                         className="flex h-8 w-8 items-center justify-center text-base text-foreground"
                       >
                         +
                       </button>
                     </div>
                     <p className="font-bold text-brand">
-                      {formatMMK(getFinalPrice(product!, line.size, line.material) * (draftQty[index] ?? line.qty))}
+                      {formatMMK(getFinalPrice(product!, line.size, line.material) * line.qty)}
                     </p>
                   </div>
                 </div>
@@ -190,30 +166,16 @@ export default function CartPage() {
                         <button
                           type="button"
                           aria-label="Decrease quantity"
-                          onClick={() =>
-                            setDraftQty((d) => {
-                              const next = [...d];
-                              next[index] = Math.max(1, (next[index] ?? line.qty) - 1);
-                              return next;
-                            })
-                          }
+                          onClick={() => setQty(index, Math.max(1, line.qty - 1))}
                           className="flex h-9 w-9 items-center justify-center text-base text-foreground"
                         >
                           −
                         </button>
-                        <span className="w-6 text-center text-sm font-semibold">
-                          {draftQty[index] ?? line.qty}
-                        </span>
+                        <span className="w-6 text-center text-sm font-semibold">{line.qty}</span>
                         <button
                           type="button"
                           aria-label="Increase quantity"
-                          onClick={() =>
-                            setDraftQty((d) => {
-                              const next = [...d];
-                              next[index] = (next[index] ?? line.qty) + 1;
-                              return next;
-                            })
-                          }
+                          onClick={() => setQty(index, line.qty + 1)}
                           className="flex h-9 w-9 items-center justify-center text-base text-foreground"
                         >
                           +
@@ -221,7 +183,7 @@ export default function CartPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 font-medium text-foreground">
-                      {formatMMK(getFinalPrice(product!, line.size, line.material) * (draftQty[index] ?? line.qty))}
+                      {formatMMK(getFinalPrice(product!, line.size, line.material) * line.qty)}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
@@ -239,17 +201,10 @@ export default function CartPage() {
             </table>
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+          <div className="mt-4 border-t border-border pt-4">
             <Link href="/" className="flex items-center gap-1 text-sm font-medium text-brand">
               <span aria-hidden>←</span> {t("cart.continueShopping")}
             </Link>
-            <button
-              type="button"
-              onClick={applyUpdates}
-              className="flex items-center gap-1 text-sm font-medium text-brand"
-            >
-              <span aria-hidden>↻</span> {t("cart.updateCart")}
-            </button>
           </div>
 
           <div className="mt-8">
@@ -279,6 +234,6 @@ export default function CartPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </Container>
   );
 }
