@@ -12,8 +12,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ na
   const row = await prisma.township.update({
     where: { name: decodeURIComponent(name) },
     data: { deliveryFee: Number(body.deliveryFee) || 0 },
+    include: { city: true },
   });
-  return Response.json({ name: row.name, deliveryFee: row.deliveryFee });
+  return Response.json({ name: row.name, deliveryFee: row.deliveryFee, city: row.city?.name ?? null });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ name: string }> }) {

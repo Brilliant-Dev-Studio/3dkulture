@@ -54,10 +54,18 @@ model Material {
   name String @unique
 }
 
+model City {
+  id         String     @id @default(cuid())
+  name       String     @unique
+  townships  Township[]
+}
+
 model Township {
-  id           String @id @default(cuid())
-  name         String @unique
-  deliveryFee  Int    @default(0)
+  id           String  @id @default(cuid())
+  name         String  @unique
+  deliveryFee  Int     @default(0)
+  cityId       String?
+  city         City?   @relation(fields: [cityId], references: [id], onDelete: SetNull)
 }
 
 model HeroSlide {
@@ -104,6 +112,7 @@ model Order {
   customerFullName String
   customerPhone    String
   customerAddress  String
+  city             String      @default("")
   township         String      @default("")
   deliveryFee      Int         @default(0)
   paymentMethod    String      @default("")

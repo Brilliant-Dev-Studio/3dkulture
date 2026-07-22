@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       customerFullName: body.customer.fullName,
       customerPhone: body.customer.phone ?? "",
       customerAddress: body.customer.address ?? "",
+      city: body.city ?? "",
       township: body.township ?? "",
       deliveryFee: Number(body.deliveryFee) || 0,
       paymentMethod: body.paymentMethod ?? "",

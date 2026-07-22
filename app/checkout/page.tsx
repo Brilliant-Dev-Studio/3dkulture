@@ -12,6 +12,7 @@ import { useI18n } from "@/lib/i18n";
 import { Skeleton } from "@/components/skeleton";
 import { Container } from "@/components/container";
 import { useTownships } from "@/lib/use-townships";
+import { useCities } from "@/lib/use-cities";
 import { DropdownSelect } from "@/components/dropdown-select";
 
 const fieldClass =
@@ -86,11 +87,14 @@ export default function CheckoutPage() {
   const { lines, clear } = useCart();
   const { products, loading } = useProducts();
   const { townships } = useTownships();
+  const { cities } = useCities();
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
   const [township, setTownship] = useState("");
+  const townshipsInCity = cities.length === 0 ? townships : townships.filter((tw) => tw.city === city);
   const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]["id"]>(
     PAYMENT_METHODS[0].id,
   );
@@ -200,6 +204,7 @@ export default function CheckoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         customer: { fullName, phone, address },
+        city,
         township,
         deliveryFee,
         items: items.map(({ line, product }) => ({
@@ -279,37 +284,70 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className={labelClass}>{t("checkout.township")}</label>
-                  <DropdownSelect
-                    value={township}
-                    onChange={(v) => {
-                      setTownship(v);
-                      setTownshipError(null);
-                    }}
-                    placeholder={t("checkout.selectTownship")}
-                    className={`rounded-[25px] border py-2.5 pl-4 pr-3 text-sm transition-all hover:border-foreground ${
-                      townshipError ? "border-brand" : "border-border"
-                    }`}
-                    icon={
-                      <svg
-                        aria-hidden
-                        viewBox="0 0 24 24"
-                        className="h-4 w-4 shrink-0 text-muted"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.8}
-                      >
-                        <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                    }
-                    options={townships.map((tw) => ({
-                      value: tw.name,
-                      label: `${tw.name} — ${formatMMK(tw.deliveryFee)}`,
-                    }))}
-                  />
-                  {townshipError && <p className="mt-1.5 text-xs text-brand">{townshipError}</p>}
+                <div className={`grid gap-4 ${cities.length > 0 ? "sm:grid-cols-2" : ""}`}>
+                  {cities.length > 0 && (
+                    <div>
+                      <label className={labelClass}>{t("checkout.city")}</label>
+                      <DropdownSelect
+                        value={city}
+                        onChange={(v) => {
+                          setCity(v);
+                          setTownship("");
+                          setTownshipError(null);
+                        }}
+                        placeholder={t("checkout.selectCity")}
+                        className="rounded-[25px] border border-border py-2.5 pl-4 pr-3 text-sm transition-all hover:border-foreground"
+                        icon={
+                          <svg
+                            aria-hidden
+                            viewBox="0 0 24 24"
+                            className="h-4 w-4 shrink-0 text-muted"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                          >
+                            <path d="M3 21h18M6 21V8l6-4 6 4v13M10 21v-6h4v6" />
+                          </svg>
+                        }
+                        options={cities.map((c) => ({ value: c, label: c }))}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className={labelClass}>{t("checkout.township")}</label>
+                    <DropdownSelect
+                      value={township}
+                      onChange={(v) => {
+                        setTownship(v);
+                        setTownshipError(null);
+                      }}
+                      placeholder={
+                        cities.length === 0 || city ? t("checkout.selectTownship") : t("checkout.selectCityFirst")
+                      }
+                      className={`rounded-[25px] border py-2.5 pl-4 pr-3 text-sm transition-all hover:border-foreground ${
+                        townshipError ? "border-brand" : "border-border"
+                      }`}
+                      icon={
+                        <svg
+                          aria-hidden
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4 shrink-0 text-muted"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.8}
+                        >
+                          <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                      }
+                      options={townshipsInCity.map((tw) => ({
+                        value: tw.name,
+                        label: `${tw.name} — ${formatMMK(tw.deliveryFee)}`,
+                      }))}
+                    />
+                    {townshipError && <p className="mt-1.5 text-xs text-brand">{townshipError}</p>}
+                  </div>
                 </div>
                 <div>
                   <label className={labelClass} htmlFor="address">

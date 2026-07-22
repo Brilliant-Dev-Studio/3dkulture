@@ -22,6 +22,7 @@ export type Category = {
 export type Township = {
   name: string;
   deliveryFee: number;
+  city: string | null;
 };
 
 export type Product = {
@@ -74,6 +75,7 @@ export type Order = {
   customerFullName: string;
   customerPhone: string;
   customerAddress: string;
+  city: string;
   township: string;
   deliveryFee: number;
   paymentMethod: string;

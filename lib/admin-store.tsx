@@ -9,6 +9,7 @@ type AdminStoreValue = {
   colors: ColorSwatch[];
   sizes: string[];
   materials: string[];
+  cities: string[];
   townships: Township[];
   loading: boolean;
   addProduct: (product: Omit<Product, "id">) => Promise<Product>;
@@ -22,7 +23,9 @@ type AdminStoreValue = {
   removeSize: (name: string) => Promise<void>;
   addMaterial: (name: string) => Promise<void>;
   removeMaterial: (name: string) => Promise<void>;
-  addTownship: (name: string, deliveryFee: number) => Promise<Township>;
+  addCity: (name: string) => Promise<void>;
+  removeCity: (name: string) => Promise<void>;
+  addTownship: (name: string, deliveryFee: number, city?: string | null) => Promise<Township>;
   updateTownship: (name: string, deliveryFee: number) => Promise<void>;
   removeTownship: (name: string) => Promise<void>;
 };
@@ -40,6 +43,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const [colors, setColors] = useState<ColorSwatch[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
   const [townships, setTownships] = useState<Township[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,14 +54,16 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       fetch("/api/colors").then((r) => json<ColorSwatch[]>(r)),
       fetch("/api/sizes").then((r) => json<string[]>(r)),
       fetch("/api/materials").then((r) => json<string[]>(r)),
+      fetch("/api/cities").then((r) => json<string[]>(r)),
       fetch("/api/townships").then((r) => json<Township[]>(r)),
     ])
-      .then(([p, c, co, s, m, tw]) => {
+      .then(([p, c, co, s, m, ci, tw]) => {
         setProducts(p);
         setCategories(c);
         setColors(co);
         setSizes(s);
         setMaterials(m);
+        setCities(ci);
         setTownships(tw);
       })
       .finally(() => setLoading(false));
@@ -69,6 +75,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     colors,
     sizes,
     materials,
+    cities,
     townships,
     loading,
     addProduct: async (product) => {
@@ -143,11 +150,24 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await fetch(`/api/materials/${encodeURIComponent(name)}`, { method: "DELETE" }).then((r) => json(r));
       setMaterials((prev) => prev.filter((m) => m !== name));
     },
-    addTownship: async (name, deliveryFee) => {
+    addCity: async (name) => {
+      await fetch("/api/cities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      }).then((r) => json(r));
+      setCities((prev) => (prev.includes(name) ? prev : [...prev, name]));
+    },
+    removeCity: async (name) => {
+      await fetch(`/api/cities/${encodeURIComponent(name)}`, { method: "DELETE" }).then((r) => json(r));
+      setCities((prev) => prev.filter((c) => c !== name));
+      setTownships((prev) => prev.map((t) => (t.city === name ? { ...t, city: null } : t)));
+    },
+    addTownship: async (name, deliveryFee, city = null) => {
       const created = await fetch("/api/townships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, deliveryFee }),
+        body: JSON.stringify({ name, deliveryFee, city }),
       }).then((r) => json<Township>(r));
       setTownships((prev) => (prev.some((t) => t.name === name) ? prev : [...prev, created]));
       return created;

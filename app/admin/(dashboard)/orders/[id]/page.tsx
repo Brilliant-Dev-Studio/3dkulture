@@ -341,8 +341,7 @@ export default function AdminOrderDetailPage() {
               <div className="flex items-start gap-2 text-foreground">
                 <PinIcon />
                 <span>
-                  {order.customerAddress || "—"}
-                  {order.township && `, ${order.township}`}
+                  {[order.customerAddress, order.township, order.city].filter(Boolean).join(", ") || "—"}
                 </span>
               </div>
             </div>

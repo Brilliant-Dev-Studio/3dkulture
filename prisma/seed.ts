@@ -67,6 +67,36 @@ async function main() {
     });
   }
 
+  const CITY_TOWNSHIPS: Record<string, { name: string; deliveryFee: number }[]> = {
+    Yangon: [
+      { name: "Bahan", deliveryFee: 2000 },
+      { name: "Sanchaung", deliveryFee: 2000 },
+      { name: "Yankin", deliveryFee: 2500 },
+      { name: "Insein", deliveryFee: 3500 },
+      { name: "Thingangyun", deliveryFee: 3000 },
+    ],
+    Mandalay: [
+      { name: "Chanayethazan", deliveryFee: 3000 },
+      { name: "Aung Myay Thar Zan", deliveryFee: 3000 },
+    ],
+    Naypyidaw: [{ name: "Zabuthiri", deliveryFee: 4000 }],
+  };
+
+  for (const cityName of Object.keys(CITY_TOWNSHIPS)) {
+    const city = await prisma.city.upsert({
+      where: { name: cityName },
+      create: { name: cityName },
+      update: {},
+    });
+    for (const tw of CITY_TOWNSHIPS[cityName]) {
+      await prisma.township.upsert({
+        where: { name: tw.name },
+        create: { name: tw.name, deliveryFee: tw.deliveryFee, cityId: city.id },
+        update: {},
+      });
+    }
+  }
+
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
   await prisma.adminUser.upsert({
     where: { email: ADMIN_EMAIL },

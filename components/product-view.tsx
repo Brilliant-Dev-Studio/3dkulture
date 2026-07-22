@@ -34,10 +34,10 @@ export function ProductView({ product }: { product: Product }) {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 sm:gap-10">
+    <div className="grid min-w-0 gap-6 sm:grid-cols-2 sm:gap-10">
       <ProductGallery key={color} images={galleryImages} alt={product.title} />
 
-      <div className="sm:sticky sm:top-24 sm:self-start">
+      <div className="min-w-0 sm:sticky sm:top-24 sm:self-start">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted">{product.category}</span>
           {product.isPreorder && (
@@ -55,7 +55,7 @@ export function ProductView({ product }: { product: Product }) {
         ) : (
           <p className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">{formatMMK(finalPrice)}</p>
         )}
-        <p className="mt-4 wrap-break-word text-sm leading-6 tracking-wide text-muted">{product.description}</p>
+        <p className="mt-4 min-w-0 wrap-break-word text-sm leading-6 tracking-wide text-muted">{product.description}</p>
 
         {product.isPreorder ? (
           <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
@@ -124,7 +124,7 @@ export function ProductView({ product }: { product: Product }) {
                         : "border-border text-foreground hover:border-foreground"
                     }`}
                   >
-                    {s} · {formatMMK(product.sizePrices[s] ?? product.price)}
+                    {s}
                   </button>
                 ))}
               </div>

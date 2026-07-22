@@ -28,7 +28,7 @@ export function InvoiceDocument({ order }: { order: Order }) {
           <p className="mt-1 font-medium text-foreground">{order.customerFullName || "—"}</p>
           <p className="text-muted">{order.customerPhone || "—"}</p>
           <p className="text-muted">
-            {[order.customerAddress, order.township].filter(Boolean).join(", ") || "—"}
+            {[order.customerAddress, order.township, order.city].filter(Boolean).join(", ") || "—"}
           </p>
         </div>
         <div className="text-right">
