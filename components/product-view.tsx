@@ -19,14 +19,14 @@ export function ProductView({ product }: { product: Product }) {
   const router = useRouter();
   const [color, setColor] = useState(product.colors[0] ?? "");
   const [size, setSize] = useState(product.sizes[0] ?? "");
-  const [material, setMaterial] = useState(product.materials[0] ?? "");
+  const material = product.materials.join(", ");
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
   const extraImages = (color && product.colorImages[color]) || [];
   const galleryImages = Array.from(new Set([...extraImages, ...product.images]));
-  const unitPrice = getVariantPrice(product, size, material);
-  const finalPrice = getFinalPrice(product, size, material);
+  const unitPrice = getVariantPrice(product, size);
+  const finalPrice = getFinalPrice(product, size);
   const hasDiscount = getDiscountValue(product, size) > 0;
 
   function addToCart() {
@@ -38,7 +38,14 @@ export function ProductView({ product }: { product: Product }) {
       <ProductGallery key={color} images={galleryImages} alt={product.title} />
 
       <div className="sm:sticky sm:top-24 sm:self-start">
-        <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted">{product.category}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted">{product.category}</span>
+          {product.isPreorder && (
+            <span className="rounded-md bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+              {t("product.preorder")}
+            </span>
+          )}
+        </div>
         <h1 className="mt-2 text-2xl font-semibold leading-snug text-foreground sm:text-3xl">{product.title}</h1>
         {hasDiscount ? (
           <div className="mt-3">
@@ -50,7 +57,11 @@ export function ProductView({ product }: { product: Product }) {
         )}
         <p className="mt-4 wrap-break-word text-sm leading-6 tracking-wide text-muted">{product.description}</p>
 
-        {product.stock <= 0 ? (
+        {product.isPreorder ? (
+          <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
+            {product.preorderNote || t("product.preorderNotice")}
+          </div>
+        ) : product.stock <= 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm font-medium text-brand">
             {t("product.outOfStock")}
           </div>
@@ -122,26 +133,9 @@ export function ProductView({ product }: { product: Product }) {
 
           {product.materials.length > 0 && (
             <div>
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">
-                {t("product.material")}: <span className="text-foreground">{material}</span>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-muted">
+                {t("product.material")}: <span className="font-semibold text-foreground">{material}</span>
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {product.materials.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMaterial(m)}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                      m === material
-                        ? "border-2 border-foreground font-semibold text-foreground"
-                        : "border-border text-foreground hover:border-foreground"
-                    }`}
-                  >
-                    {m}
-                    {product.materialPrices[m] ? ` (+${formatMMK(product.materialPrices[m])})` : ""}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -187,7 +181,7 @@ export function ProductView({ product }: { product: Product }) {
             }}
             className="w-full rounded-full bg-brand py-4 text-sm font-bold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark"
           >
-            {t("product.buyNow")}
+            {product.isPreorder ? t("product.preorderNow") : t("product.buyNow")}
           </button>
         </div>
 

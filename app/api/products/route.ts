@@ -52,6 +52,8 @@ export async function POST(request: Request) {
       costPrice: Number(body.costPrice) || 0,
       discountType: body.discountType === "fixed" ? "fixed" : "percent",
       discountValue: Number(body.discountValue) || 0,
+      isPreorder: Boolean(body.isPreorder),
+      preorderNote: body.preorderNote ?? "",
       stock: Number(body.stock) || 0,
       lowStockThreshold: Number(body.lowStockThreshold) || 5,
       images: body.images ?? [],

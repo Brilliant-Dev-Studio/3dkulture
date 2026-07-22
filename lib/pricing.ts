@@ -1,10 +1,8 @@
 import type { Product } from "./types";
 
-export function getVariantPrice(product: Product, size: string, material: string): number {
+export function getVariantPrice(product: Product, size: string): number {
   const sizePrice = product.sizePrices?.[size];
-  const base = sizePrice != null ? sizePrice : product.price;
-  const materialDelta = product.materialPrices?.[material] ?? 0;
-  return base + materialDelta;
+  return sizePrice != null ? sizePrice : product.price;
 }
 
 export function getDiscountValue(product: Product, size: string): number {
@@ -12,8 +10,8 @@ export function getDiscountValue(product: Product, size: string): number {
   return sizeDiscount != null ? sizeDiscount : product.discountValue;
 }
 
-export function getFinalPrice(product: Product, size: string, material: string): number {
-  const base = getVariantPrice(product, size, material);
+export function getFinalPrice(product: Product, size: string): number {
+  const base = getVariantPrice(product, size);
   const discountValue = getDiscountValue(product, size);
   if (!discountValue) return base;
   const discounted =

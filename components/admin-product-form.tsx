@@ -47,32 +47,6 @@ function TagToggle({
   );
 }
 
-function PriceDeltaRow({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-sm text-foreground">{label}</span>
-      <div className="relative w-32">
-        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted">+K</span>
-        <input
-          type="number"
-          value={value || ""}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
-          placeholder="0"
-          className={`${fieldClass} py-1.5 pl-7 text-xs`}
-        />
-      </div>
-    </div>
-  );
-}
-
 function SizePriceRow({
   label,
   value,
@@ -374,6 +348,8 @@ export function ProductForm({
   const [discountValue, setDiscountValue] = useState(
     initialProduct ? String(initialProduct.discountValue || "") : "",
   );
+  const [isPreorder, setIsPreorder] = useState(initialProduct?.isPreorder ?? false);
+  const [preorderNote, setPreorderNote] = useState(initialProduct?.preorderNote ?? "");
   const [stock, setStock] = useState(initialProduct ? String(initialProduct.stock) : "0");
   const [lowStockThreshold, setLowStockThreshold] = useState(
     initialProduct ? String(initialProduct.lowStockThreshold) : "5",
@@ -430,6 +406,8 @@ export function ProductForm({
       costPrice: Number(costPrice) || 0,
       discountType,
       discountValue: Number(discountValue) || 0,
+      isPreorder,
+      preorderNote: preorderNote.trim(),
       stock: Number(stock) || 0,
       lowStockThreshold: Number(lowStockThreshold) || 5,
       images: images.length > 0 ? images : [fallbackImage],
@@ -648,6 +626,40 @@ export function ProductForm({
             </div>
 
             <div>
+              <label className="flex items-center justify-between gap-3">
+                <span className={labelClass}>Preorder</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPreorder}
+                  onClick={() => setIsPreorder((v) => !v)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    isPreorder ? "bg-brand" : "bg-zinc-300"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                      isPreorder ? "translate-x-5.5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </label>
+              <p className="mt-1 text-[11px] text-muted">
+                Storefront shows "Preorder" instead of "Buy Now" — customers can order before stock arrives.
+              </p>
+
+              {isPreorder && (
+                <input
+                  type="text"
+                  value={preorderNote}
+                  onChange={(e) => setPreorderNote(e.target.value)}
+                  placeholder="e.g. Ships in 2-3 weeks"
+                  className={`${fieldClass} mt-2`}
+                />
+              )}
+            </div>
+
+            <div>
               <label className={labelClass} htmlFor="description">
                 Description
               </label>
@@ -776,22 +788,6 @@ export function ProductForm({
           </div>
         )}
 
-        {selectedMaterials.length > 0 && (
-          <div className={cardClass}>
-            <h2 className="mb-1 text-sm font-bold uppercase tracking-wide">Material Pricing</h2>
-            <p className="mb-4 text-xs text-muted">Extra charge added on top of the base price for each material.</p>
-            <div className="space-y-2">
-              {selectedMaterials.map((m) => (
-                <PriceDeltaRow
-                  key={m}
-                  label={m}
-                  value={materialPrices[m] ?? 0}
-                  onChange={(v) => setMaterialPrices((prev) => ({ ...prev, [m]: v }))}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
       </div>
 

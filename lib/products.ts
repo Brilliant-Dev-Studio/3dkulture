@@ -68,6 +68,8 @@ const RAW_PRODUCTS: Omit<
   | "costPrice"
   | "discountType"
   | "discountValue"
+  | "isPreorder"
+  | "preorderNote"
   | "stock"
   | "lowStockThreshold"
 >[] = [
@@ -172,6 +174,8 @@ export const BASE_PRODUCTS: Product[] = RAW_PRODUCTS.map((p) => ({
   costPrice: Math.round(p.price * 0.6),
   discountType: "percent" as const,
   discountValue: 0,
+  isPreorder: false,
+  preorderNote: "",
   stock: 20,
   lowStockThreshold: 5,
 }));

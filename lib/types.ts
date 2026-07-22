@@ -28,6 +28,8 @@ export type Product = {
   costPrice: number; // MMK, admin's cost — internal reference only
   discountType: "percent" | "fixed"; // percent = % off, fixed = flat MMK off
   discountValue: number; // 0-100 for percent, MMK amount for fixed
+  isPreorder: boolean; // when true, storefront shows "Preorder" instead of "Buy Now"
+  preorderNote: string; // optional note shown near the preorder CTA, e.g. estimated ready date
   stock: number; // units in stock
   lowStockThreshold: number; // stock at/below this is flagged low
   images: string[];

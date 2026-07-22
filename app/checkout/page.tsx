@@ -90,7 +90,7 @@ export default function CheckoutPage() {
     .filter((item) => item.product);
   const subtotal = items.reduce(
     (sum, { line, product }) =>
-      sum + (product ? getFinalPrice(product, line.size, line.material) * line.qty : 0),
+      sum + (product ? getFinalPrice(product, line.size) * line.qty : 0),
     0,
   );
 
@@ -173,7 +173,7 @@ export default function CheckoutPage() {
           size: line.size,
           material: line.material,
           qty: line.qty,
-          price: getFinalPrice(product!, line.size, line.material),
+          price: getFinalPrice(product!, line.size),
         })),
         total: subtotal,
         invoiceDataUrl: invoiceUrl,
@@ -322,7 +322,7 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                   <p className="self-center text-sm font-medium text-foreground">
-                    {formatMMK(getFinalPrice(product!, line.size, line.material) * line.qty)}
+                    {formatMMK(getFinalPrice(product!, line.size) * line.qty)}
                   </p>
                 </li>
               ))}

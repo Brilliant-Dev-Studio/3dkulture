@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { formatMMK } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 
 export function ProductCard({
   product,
@@ -15,6 +16,8 @@ export function ProductCard({
   rank?: number;
   soldLabel?: string;
 }) {
+  const { t } = useI18n();
+  const preorderLabel = t("product.preorder");
   const [imgIndex, setImgIndex] = useState(0);
   const count = product.images.length;
   const hasDiscount = product.discountValue > 0;
@@ -49,11 +52,18 @@ export function ProductCard({
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
 
-        {hasDiscount && (
-          <span className="absolute left-2 top-2 rounded-md bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
-            {discountLabel}
-          </span>
-        )}
+        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+          {product.isPreorder && (
+            <span className="rounded-md bg-foreground px-1.5 py-0.5 text-[10px] font-bold text-white">
+              {preorderLabel}
+            </span>
+          )}
+          {hasDiscount && (
+            <span className="rounded-md bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+              {discountLabel}
+            </span>
+          )}
+        </div>
 
         {rank !== undefined && (
           <span

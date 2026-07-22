@@ -76,6 +76,8 @@ model Product {
   lowStockThreshold Int   @default(5)
   discountType   String   @default("percent")
   discountValue  Int      @default(0)
+  isPreorder     Boolean  @default(false)
+  preorderNote   String   @default("")
   images         String[]
   colors         String[]
   sizes          String[]

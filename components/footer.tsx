@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { T } from "./t";
 import { Container } from "./container";
 
@@ -63,6 +64,15 @@ export function Footer() {
             <FacebookIcon />
             Facebook
           </a>
+        </div>
+
+        <div className="flex flex-col items-center gap-2 text-sm text-white/70 sm:items-start">
+          <Link href="/faq" className="hover:text-white">
+            <T k="footer.faq" />
+          </Link>
+          <Link href="/terms" className="hover:text-white">
+            <T k="footer.terms" />
+          </Link>
         </div>
 
         <p className="text-xs uppercase tracking-[0.15em] text-white/50">

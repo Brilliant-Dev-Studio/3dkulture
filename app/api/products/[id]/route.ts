@@ -31,6 +31,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       costPrice: body.costPrice !== undefined ? Number(body.costPrice) : undefined,
       discountType: body.discountType !== undefined ? (body.discountType === "fixed" ? "fixed" : "percent") : undefined,
       discountValue: body.discountValue !== undefined ? Number(body.discountValue) : undefined,
+      isPreorder: body.isPreorder !== undefined ? Boolean(body.isPreorder) : undefined,
+      preorderNote: body.preorderNote,
       stock: body.stock !== undefined ? Number(body.stock) : undefined,
       lowStockThreshold: body.lowStockThreshold !== undefined ? Number(body.lowStockThreshold) : undefined,
       images: body.images,

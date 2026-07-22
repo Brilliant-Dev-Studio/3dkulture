@@ -36,6 +36,9 @@ const DICT = {
     "product.addToCart": "Add to Cart",
     "product.addedToCart": "Added to Cart",
     "product.buyNow": "Buy Now",
+    "product.preorder": "Preorder",
+    "product.preorderNow": "Preorder Now",
+    "product.preorderNotice": "This item is available for preorder. It will ship once ready.",
     "product.needHelp": "Need help ordering? Contact our support team.",
 
     "cart.title": "Cart",
@@ -76,6 +79,8 @@ const DICT = {
     "checkout.emptyBody": "Your cart is empty.",
 
     "footer.rights": "All Rights Reserved",
+    "footer.faq": "FAQ",
+    "footer.terms": "Terms & Conditions",
   },
   my: {
     "nav.search": "ကုန်ပစ္စည်း ရှာမည်",
@@ -108,6 +113,9 @@ const DICT = {
     "product.addToCart": "ခြင်းထဲထည့်မည်",
     "product.addedToCart": "ခြင်းထဲထည့်ပြီးပါပြီ",
     "product.buyNow": "ယခုဝယ်မည်",
+    "product.preorder": "ကြိုတင်မှာယူရန်",
+    "product.preorderNow": "ကြိုတင်မှာယူမည်",
+    "product.preorderNotice": "ဤပစ္စည်းကို ကြိုတင်မှာယူနိုင်ပါသည်။ အသင့်ဖြစ်သည်နှင့် ပို့ဆောင်ပေးပါမည်။",
     "product.needHelp": "အော်ဒါတင်ရန် အကူအညီလိုပါသလား? ကျွန်ုပ်တို့၏ Support အဖွဲ့ကို ဆက်သွယ်ပါ။",
 
     "cart.title": "ခြင်းလှော်",
@@ -148,6 +156,8 @@ const DICT = {
     "checkout.emptyBody": "သင့်ခြင်းလှော် ဗလာဖြစ်နေပါသည်။",
 
     "footer.rights": "မူပိုင်ခွင့်အားလုံး ရရှိထားပါသည်",
+    "footer.faq": "မေးလေ့ရှိသောမေးခွန်းများ",
+    "footer.terms": "စည်းကမ်းချက်များ",
   },
 } as const;
 

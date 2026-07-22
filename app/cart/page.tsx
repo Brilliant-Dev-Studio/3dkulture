@@ -23,7 +23,7 @@ export default function CartPage() {
 
   const subtotal = items.reduce(
     (sum, { line, product }) =>
-      sum + (product ? getFinalPrice(product, line.size, line.material) * line.qty : 0),
+      sum + (product ? getFinalPrice(product, line.size) * line.qty : 0),
     0,
   );
 
@@ -116,7 +116,7 @@ export default function CartPage() {
                       </button>
                     </div>
                     <p className="font-bold text-brand">
-                      {formatMMK(getFinalPrice(product!, line.size, line.material) * line.qty)}
+                      {formatMMK(getFinalPrice(product!, line.size) * line.qty)}
                     </p>
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export default function CartPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 text-foreground">
-                      {formatMMK(getFinalPrice(product!, line.size, line.material))}
+                      {formatMMK(getFinalPrice(product!, line.size))}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center rounded-[25px] border border-border">
@@ -183,7 +183,7 @@ export default function CartPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 font-medium text-foreground">
-                      {formatMMK(getFinalPrice(product!, line.size, line.material) * line.qty)}
+                      {formatMMK(getFinalPrice(product!, line.size) * line.qty)}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
