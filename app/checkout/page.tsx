@@ -11,11 +11,19 @@ import { InvoiceDropzone } from "@/components/invoice-dropzone";
 import { useI18n } from "@/lib/i18n";
 import { Skeleton } from "@/components/skeleton";
 import { Container } from "@/components/container";
+import { useTownships } from "@/lib/use-townships";
+import { DropdownSelect } from "@/components/dropdown-select";
 
 const fieldClass =
   "w-full rounded-[25px] border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10";
 const labelClass = "mb-1.5 block text-xs font-semibold text-muted";
 const cardClass = "rounded-[25px] border border-border bg-white p-6";
+
+const PAYMENT_METHODS = [
+  { id: "kbzpay", name: "KBZPay", logo: "/payments/kbzpay.png" },
+  { id: "wavepay", name: "WavePay", logo: "/payments/wavepay.jpg" },
+  { id: "uabpay", name: "UABPay", logo: "/payments/uabpay.jpg" },
+] as const;
 
 function StepBadge({ n }: { n: number }) {
   return (
@@ -77,22 +85,32 @@ export default function CheckoutPage() {
   const { t } = useI18n();
   const { lines, clear } = useCart();
   const { products, loading } = useProducts();
+  const { townships } = useTownships();
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [township, setTownship] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]["id"]>(
+    PAYMENT_METHODS[0].id,
+  );
   const [placed, setPlaced] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [invoiceError, setInvoiceError] = useState<string | null>(null);
+  const [townshipError, setTownshipError] = useState<string | null>(null);
 
   const items = lines
     .map((line) => ({ line, product: products.find((p) => p.id === line.productId) }))
     .filter((item) => item.product);
+  const hasPreorderItem = items.some(({ product }) => product!.isPreorder);
   const subtotal = items.reduce(
     (sum, { line, product }) =>
       sum + (product ? getFinalPrice(product, line.size) * line.qty : 0),
     0,
   );
+  const deliveryFee = townships.find((t) => t.name === township)?.deliveryFee ?? 0;
+  const total = subtotal + deliveryFee;
 
   if (placed) {
     return (
@@ -102,12 +120,24 @@ export default function CheckoutPage() {
         </div>
         <h1 className="mt-5 text-2xl font-bold">{t("checkout.orderPlaced")}</h1>
         <p className="mt-2 text-sm text-muted">{t("checkout.thanks")}</p>
-        <Link
-          href="/"
-          className="mt-6 rounded-[25px] bg-foreground px-6 py-2.5 text-sm font-bold text-white hover:bg-black"
-        >
-          {t("cart.continueShopping")}
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          {placedOrderId && (
+            <Link
+              href={`/order/${placedOrderId}/invoice`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-[25px] border border-brand px-6 py-2.5 text-sm font-bold text-brand hover:bg-brand hover:text-white"
+            >
+              {t("checkout.downloadInvoice")}
+            </Link>
+          )}
+          <Link
+            href="/"
+            className="rounded-[25px] bg-foreground px-6 py-2.5 text-sm font-bold text-white hover:bg-black"
+          >
+            {t("cart.continueShopping")}
+          </Link>
+        </div>
       </Container>
     );
   }
@@ -150,6 +180,11 @@ export default function CheckoutPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!township) {
+      setTownshipError(t("checkout.selectTownship"));
+      return;
+    }
+    setTownshipError(null);
     setInvoiceError(null);
     setSubmitting(true);
     let invoiceUrl: string | null = null;
@@ -165,6 +200,8 @@ export default function CheckoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         customer: { fullName, phone, address },
+        township,
+        deliveryFee,
         items: items.map(({ line, product }) => ({
           productId: line.productId,
           title: product!.title,
@@ -175,14 +212,17 @@ export default function CheckoutPage() {
           qty: line.qty,
           price: getFinalPrice(product!, line.size),
         })),
-        total: subtotal,
+        total,
+        paymentMethod,
         invoiceDataUrl: invoiceUrl,
         invoiceName: invoiceFile?.name ?? null,
       }),
     });
     setSubmitting(false);
     if (!res.ok) return;
+    const placedOrder = await res.json();
     clear();
+    setPlacedOrderId(placedOrder.id);
     setPlaced(true);
   }
 
@@ -240,6 +280,38 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <div>
+                  <label className={labelClass}>{t("checkout.township")}</label>
+                  <DropdownSelect
+                    value={township}
+                    onChange={(v) => {
+                      setTownship(v);
+                      setTownshipError(null);
+                    }}
+                    placeholder={t("checkout.selectTownship")}
+                    className={`rounded-[25px] border py-2.5 pl-4 pr-3 text-sm transition-all hover:border-foreground ${
+                      townshipError ? "border-brand" : "border-border"
+                    }`}
+                    icon={
+                      <svg
+                        aria-hidden
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 shrink-0 text-muted"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                      >
+                        <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                    }
+                    options={townships.map((tw) => ({
+                      value: tw.name,
+                      label: `${tw.name} — ${formatMMK(tw.deliveryFee)}`,
+                    }))}
+                  />
+                  {townshipError && <p className="mt-1.5 text-xs text-brand">{townshipError}</p>}
+                </div>
+                <div>
                   <label className={labelClass} htmlFor="address">
                     {t("checkout.address")}
                   </label>
@@ -261,7 +333,7 @@ export default function CheckoutPage() {
                       rows={3}
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="House no, street, township, city"
+                      placeholder="House no, street, ward"
                       className={`${fieldClass} pt-2.5`}
                     />
                   </div>
@@ -272,6 +344,34 @@ export default function CheckoutPage() {
             <div className={cardClass}>
               <div className="mb-2 flex items-center gap-3">
                 <StepBadge n={2} />
+                <h2 className="text-sm font-bold uppercase tracking-wide">{t("checkout.paymentMethod")}</h2>
+              </div>
+              <p className="ml-9 text-xs text-muted">{t("checkout.paymentMethodNote")}</p>
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                {PAYMENT_METHODS.map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.id)}
+                    className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-colors ${
+                      paymentMethod === method.id
+                        ? "border-2 border-brand bg-brand/5"
+                        : "border-border hover:border-foreground"
+                    }`}
+                  >
+                    <div className="relative h-10 w-full">
+                      <Image src={method.logo} alt={method.name} fill sizes="120px" className="object-contain" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">{method.name}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-muted">{t("checkout.paymentAccountNote")}</p>
+            </div>
+
+            <div className={cardClass}>
+              <div className="mb-2 flex items-center gap-3">
+                <StepBadge n={3} />
                 <h2 className="text-sm font-bold uppercase tracking-wide">{t("checkout.paymentInvoice")}</h2>
               </div>
               <p className="ml-9 text-xs text-muted">{t("checkout.paymentInvoiceNote")}</p>
@@ -316,7 +416,14 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                   <div className="flex flex-1 flex-col justify-center">
-                    <p className="text-sm font-medium text-foreground">{product!.title}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-foreground">{product!.title}</p>
+                      {product!.isPreorder && (
+                        <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                          {t("product.preorder")}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs italic text-muted">
                       {[line.color, line.size, line.material].filter(Boolean).join(" / ")}
                     </p>
@@ -328,6 +435,12 @@ export default function CheckoutPage() {
               ))}
             </ul>
 
+            {hasPreorderItem && (
+              <p className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 px-3 py-2.5 text-center text-xs text-brand">
+                {t("checkout.preorderNotice")}
+              </p>
+            )}
+
             <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between text-muted">
                 <span>{t("cart.subtotal")}</span>
@@ -335,12 +448,12 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-muted">
                 <span>{t("checkout.shipping")}</span>
-                <span>{t("checkout.shippingCalculated")}</span>
+                <span>{township ? formatMMK(deliveryFee) : t("checkout.shippingCalculated")}</span>
               </div>
             </div>
             <div className="mt-3 flex justify-between border-t border-border pt-3 text-lg font-bold">
               <span>{t("checkout.total")}</span>
-              <span className="text-brand">{formatMMK(subtotal)}</span>
+              <span className="text-brand">{formatMMK(total)}</span>
             </div>
           </div>
         </form>

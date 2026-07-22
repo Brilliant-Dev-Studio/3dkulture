@@ -33,6 +33,11 @@ const NAV = [
     icon: "M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm9 0v5h5M9 13h6M9 17h6M9 9h2",
   },
   {
+    href: "/admin/delivery",
+    label: "Delivery Fees",
+    icon: "M3 16V6a1 1 0 0 1 1-1h9v11M3 16h13M3 16a2 2 0 1 0 4 0M13 16a2 2 0 1 0 4 0M13 8h4l3 3v5h-2M17 8v5h5",
+  },
+  {
     href: "/admin/hero",
     label: "Hero Slides",
     icon: "M3 4h18v13H3z M7 20h10 M8 8l3 3-3 3 M16 8l-3 3 3 3",

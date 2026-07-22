@@ -80,7 +80,14 @@ export default function CartPage() {
                 <div className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-foreground">{product!.title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-medium text-foreground">{product!.title}</p>
+                        {product!.isPreorder && (
+                          <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                            {t("product.preorder")}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs italic text-muted">
                         {[line.color, line.size, line.material].filter(Boolean).join(" / ")}
                       </p>
@@ -151,7 +158,14 @@ export default function CartPage() {
                           />
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{product!.title}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-foreground">{product!.title}</p>
+                            {product!.isPreorder && (
+                              <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                                {t("product.preorder")}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs italic text-muted">
                             {[line.color, line.size, line.material].filter(Boolean).join(" / ")}
                           </p>

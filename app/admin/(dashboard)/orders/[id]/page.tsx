@@ -340,9 +340,29 @@ export default function AdminOrderDetailPage() {
               </a>
               <div className="flex items-start gap-2 text-foreground">
                 <PinIcon />
-                <span>{order.customerAddress || "—"}</span>
+                <span>
+                  {order.customerAddress || "—"}
+                  {order.township && `, ${order.township}`}
+                </span>
               </div>
             </div>
+
+            {order.township && (
+              <div className="mt-4 border-t border-border pt-4 text-sm">
+                <p className="text-xs text-muted">Delivery fee</p>
+                <p className="mt-1 font-medium text-foreground">{formatMMK(order.deliveryFee)}</p>
+              </div>
+            )}
+
+            {order.paymentMethod && (
+              <div className="mt-4 border-t border-border pt-4 text-sm">
+                <p className="text-xs text-muted">Payment method</p>
+                <p className="mt-1 font-medium text-foreground">
+                  {{ kbzpay: "KBZPay", wavepay: "WavePay", uabpay: "UABPay" }[order.paymentMethod] ??
+                    order.paymentMethod}
+                </p>
+              </div>
+            )}
 
             {order.notes && (
               <div className="mt-4 border-t border-border pt-4 text-sm">

@@ -7,13 +7,13 @@ import { Skeleton } from "@/components/skeleton";
 import { InvoiceDocument } from "@/components/invoice-document";
 import type { Order } from "@/lib/types";
 
-export default function AdminOrderInvoicePage() {
+export default function OrderInvoicePage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/orders/${params.id}`)
+    fetch(`/api/orders/${params.id}/public`)
       .then((r) => (r.ok ? r.json() : null))
       .then(setOrder)
       .finally(() => setLoading(false));
@@ -44,13 +44,6 @@ export default function AdminOrderInvoicePage() {
               <Skeleton className="ml-auto h-3 w-24" />
             </div>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-28" />
-            </div>
-          </div>
           <div className="mt-8 space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
@@ -66,15 +59,15 @@ export default function AdminOrderInvoicePage() {
       <style>{`@page { size: A4; margin: 0; }`}</style>
 
       <div className="mx-auto mb-4 flex w-[210mm] max-w-full items-center justify-between px-4 print:hidden">
-        <Link href={`/admin/orders/${order.id}`} className="text-sm font-medium text-muted hover:text-brand">
-          ← Back to order
+        <Link href="/" className="text-sm font-medium text-muted hover:text-brand">
+          ← Back to shop
         </Link>
         <button
           type="button"
           onClick={() => window.print()}
           className="rounded-md bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-brand-dark"
         >
-          Print / Save PDF
+          Download / Print
         </button>
       </div>
 

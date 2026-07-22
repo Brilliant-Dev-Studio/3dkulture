@@ -54,6 +54,12 @@ model Material {
   name String @unique
 }
 
+model Township {
+  id           String @id @default(cuid())
+  name         String @unique
+  deliveryFee  Int    @default(0)
+}
+
 model HeroSlide {
   id        String   @id @default(cuid())
   image     String
@@ -98,6 +104,9 @@ model Order {
   customerFullName String
   customerPhone    String
   customerAddress  String
+  township         String      @default("")
+  deliveryFee      Int         @default(0)
+  paymentMethod    String      @default("")
   notes            String      @default("")
   total            Int
   invoiceDataUrl   String?
