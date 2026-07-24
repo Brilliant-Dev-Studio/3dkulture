@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/skeleton";
 import { InvoiceDocument } from "@/components/invoice-document";
+import { downloadInvoiceAsImage } from "@/lib/download-invoice";
 import type { Order } from "@/lib/types";
 
 export default function OrderInvoicePage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const autoDownload = searchParams.get("download") === "1";
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/orders/${params.id}/public`)
@@ -18,6 +22,18 @@ export default function OrderInvoicePage() {
       .then(setOrder)
       .finally(() => setLoading(false));
   }, [params.id]);
+
+  function download() {
+    if (!invoiceRef.current || !order) return;
+    downloadInvoiceAsImage(invoiceRef.current, `invoice-${order.id}.png`);
+  }
+
+  useEffect(() => {
+    if (!autoDownload || !order || !invoiceRef.current) return;
+    const timeout = window.setTimeout(() => download(), 400);
+    return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoDownload, order]);
 
   if (!loading && !order) {
     return (
@@ -55,23 +71,24 @@ export default function OrderInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-auto bg-zinc-100 py-8 print:bg-white print:py-0">
-      <style>{`@page { size: A4; margin: 0; }`}</style>
-
-      <div className="mx-auto mb-4 flex w-[210mm] max-w-full items-center justify-between px-4 print:hidden">
+    <div className="min-h-screen overflow-x-auto bg-zinc-100 py-8">
+      <div className="mx-auto mb-4 flex w-[210mm] max-w-full items-center justify-between px-4">
         <Link href="/" className="text-sm font-medium text-muted hover:text-brand">
           ← Back to shop
         </Link>
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={download}
           className="rounded-md bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-brand-dark"
         >
-          Download / Print
+          Download Invoice
         </button>
       </div>
 
-      <div className="mx-auto min-h-[297mm] w-[210mm] max-w-full bg-white p-[15mm] shadow-sm print:min-h-0 print:shadow-none">
+      <div
+        ref={invoiceRef}
+        className="mx-auto min-h-[297mm] w-[210mm] max-w-full bg-white p-[15mm] shadow-sm"
+      >
         <InvoiceDocument order={order} />
       </div>
     </div>

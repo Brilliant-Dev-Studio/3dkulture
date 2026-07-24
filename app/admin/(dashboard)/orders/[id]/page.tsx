@@ -341,17 +341,11 @@ export default function AdminOrderDetailPage() {
               <div className="flex items-start gap-2 text-foreground">
                 <PinIcon />
                 <span>
-                  {[order.customerAddress, order.township, order.city].filter(Boolean).join(", ") || "—"}
+                  {[order.customerAddress, order.township, order.city, order.region].filter(Boolean).join(", ") ||
+                    "—"}
                 </span>
               </div>
             </div>
-
-            {order.township && (
-              <div className="mt-4 border-t border-border pt-4 text-sm">
-                <p className="text-xs text-muted">Delivery fee</p>
-                <p className="mt-1 font-medium text-foreground">{formatMMK(order.deliveryFee)}</p>
-              </div>
-            )}
 
             {order.paymentMethod && (
               <div className="mt-4 border-t border-border pt-4 text-sm">

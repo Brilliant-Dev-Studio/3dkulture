@@ -1,12 +1,31 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
+export function ProductGallery({
+  images,
+  alt,
+  focusSrc,
+}: {
+  images: string[];
+  alt: string;
+  focusSrc?: string;
+}) {
   const [active, setActive] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState("center");
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!focusSrc) return;
+    const idx = images.indexOf(focusSrc);
+    if (idx >= 0) setActive(idx);
+  }, [focusSrc, images]);
+
+  useEffect(() => {
+    thumbRefs.current[active]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [active]);
 
   return (
     <div className="min-w-0">
@@ -35,18 +54,21 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         />
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="scroll-thin mt-3 flex gap-1.5 overflow-x-auto pb-1">
         {images.map((src, i) => (
           <button
             key={src}
+            ref={(el) => {
+              thumbRefs.current[i] = el;
+            }}
             type="button"
             onClick={() => setActive(i)}
-            className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
+            className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-colors sm:h-14 sm:w-14 ${
               i === active ? "border-brand" : "border-border"
             }`}
             aria-label={`Show image ${i + 1}`}
           >
-            <Image src={src} alt="" fill sizes="80px" className="object-cover" />
+            <Image src={src} alt="" fill sizes="56px" className="object-cover" />
           </button>
         ))}
       </div>

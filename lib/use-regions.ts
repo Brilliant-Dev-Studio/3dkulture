@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { City } from "./types";
+import type { Region } from "./types";
 
-export function useCities() {
-  const [cities, setCities] = useState<City[]>([]);
+export function useRegions() {
+  const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/cities")
+    fetch("/api/regions")
       .then((r) => r.json())
-      .then(setCities)
+      .then(setRegions)
       .finally(() => setLoading(false));
   }, []);
 
-  return { cities, loading };
+  return { regions, loading };
 }

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/skeleton";
 import { Container } from "@/components/container";
 import { useTownships } from "@/lib/use-townships";
 import { useCities } from "@/lib/use-cities";
+import { useRegions } from "@/lib/use-regions";
 import { DropdownSelect } from "@/components/dropdown-select";
 
 const fieldClass =
@@ -21,9 +22,9 @@ const labelClass = "mb-1.5 block text-xs font-semibold text-muted";
 const cardClass = "rounded-[25px] border border-border bg-white p-6";
 
 const PAYMENT_METHODS = [
-  { id: "kbzpay", name: "KBZPay", logo: "/payments/kbzpay.png" },
-  { id: "wavepay", name: "WavePay", logo: "/payments/wavepay.jpg" },
-  { id: "uabpay", name: "UABPay", logo: "/payments/uabpay.jpg" },
+  { id: "kbzpay", name: "KBZPay", logo: "/payments/kbzpay.png", qr: "/paymentQrs/kbzPay.jpg" },
+  { id: "wavepay", name: "WavePay", logo: "/payments/wavepay.jpg", qr: "/paymentQrs/wavePay.jpg" },
+  { id: "uabpay", name: "UABPay", logo: "/payments/uabpay.jpg", qr: "/paymentQrs/uabPay.jpg" },
 ] as const;
 
 function StepBadge({ n }: { n: number }) {
@@ -83,21 +84,27 @@ async function uploadInvoice(file: File): Promise<string> {
 }
 
 export default function CheckoutPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { lines, clear } = useCart();
   const { products, loading } = useProducts();
   const { townships } = useTownships();
   const { cities } = useCities();
+  const { regions } = useRegions();
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [region, setRegion] = useState("");
   const [city, setCity] = useState("");
   const [township, setTownship] = useState("");
+  const citiesInRegion = regions.length === 0 ? cities : cities.filter((c) => c.region === region);
   const townshipsInCity = cities.length === 0 ? townships : townships.filter((tw) => tw.city === city);
+  const localize = (name: string, nameMy: string) => (locale === "my" && nameMy ? nameMy : name);
   const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]["id"]>(
     PAYMENT_METHODS[0].id,
   );
+  const selectedPaymentMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
+  const [qrOpen, setQrOpen] = useState(false);
   const [placed, setPlaced] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -113,8 +120,7 @@ export default function CheckoutPage() {
       sum + (product ? getFinalPrice(product, line.size) * line.qty : 0),
     0,
   );
-  const deliveryFee = townships.find((t) => t.name === township)?.deliveryFee ?? 0;
-  const total = subtotal + deliveryFee;
+  const total = subtotal;
 
   if (placed) {
     return (
@@ -204,9 +210,9 @@ export default function CheckoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         customer: { fullName, phone, address },
+        region,
         city,
         township,
-        deliveryFee,
         items: items.map(({ line, product }) => ({
           productId: line.productId,
           title: product!.title,
@@ -229,6 +235,7 @@ export default function CheckoutPage() {
     clear();
     setPlacedOrderId(placedOrder.id);
     setPlaced(true);
+    window.open(`/order/${placedOrder.id}/invoice?download=1`, "_blank");
   }
 
   return (
@@ -284,7 +291,41 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
-                <div className={`grid gap-4 ${cities.length > 0 ? "sm:grid-cols-2" : ""}`}>
+                <div
+                  className={`grid gap-4 ${
+                    regions.length > 0 ? "sm:grid-cols-3" : cities.length > 0 ? "sm:grid-cols-2" : ""
+                  }`}
+                >
+                  {regions.length > 0 && (
+                    <div>
+                      <label className={labelClass}>{t("checkout.region")}</label>
+                      <DropdownSelect
+                        value={region}
+                        onChange={(v) => {
+                          setRegion(v);
+                          setCity("");
+                          setTownship("");
+                          setTownshipError(null);
+                        }}
+                        placeholder={t("checkout.selectRegion")}
+                        className="rounded-[25px] border border-border py-2.5 pl-4 pr-3 text-sm transition-all hover:border-foreground"
+                        icon={
+                          <svg
+                            aria-hidden
+                            viewBox="0 0 24 24"
+                            className="h-4 w-4 shrink-0 text-muted"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                          >
+                            <path d="M3 6h18M3 12h18M3 18h18" />
+                          </svg>
+                        }
+                        options={regions.map((r) => ({ value: r.name, label: localize(r.name, r.nameMy) }))}
+                      />
+                    </div>
+                  )}
+
                   {cities.length > 0 && (
                     <div>
                       <label className={labelClass}>{t("checkout.city")}</label>
@@ -295,7 +336,9 @@ export default function CheckoutPage() {
                           setTownship("");
                           setTownshipError(null);
                         }}
-                        placeholder={t("checkout.selectCity")}
+                        placeholder={
+                          regions.length === 0 || region ? t("checkout.selectCity") : t("checkout.selectRegionFirst")
+                        }
                         className="rounded-[25px] border border-border py-2.5 pl-4 pr-3 text-sm transition-all hover:border-foreground"
                         icon={
                           <svg
@@ -309,7 +352,7 @@ export default function CheckoutPage() {
                             <path d="M3 21h18M6 21V8l6-4 6 4v13M10 21v-6h4v6" />
                           </svg>
                         }
-                        options={cities.map((c) => ({ value: c, label: c }))}
+                        options={citiesInRegion.map((c) => ({ value: c.name, label: localize(c.name, c.nameMy) }))}
                       />
                     </div>
                   )}
@@ -341,10 +384,7 @@ export default function CheckoutPage() {
                           <circle cx="12" cy="10" r="3" />
                         </svg>
                       }
-                      options={townshipsInCity.map((tw) => ({
-                        value: tw.name,
-                        label: `${tw.name} — ${formatMMK(tw.deliveryFee)}`,
-                      }))}
+                      options={townshipsInCity.map((tw) => ({ value: tw.name, label: localize(tw.name, tw.nameMy) }))}
                     />
                     {townshipError && <p className="mt-1.5 text-xs text-brand">{townshipError}</p>}
                   </div>
@@ -404,7 +444,29 @@ export default function CheckoutPage() {
                   </button>
                 ))}
               </div>
-              <p className="mt-3 text-xs text-muted">{t("checkout.paymentAccountNote")}</p>
+
+              {selectedPaymentMethod && (
+                <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-brand bg-brand/5 p-4 text-center">
+                  <p className="text-xs font-semibold text-brand">
+                    {t("checkout.scanToPay")} {selectedPaymentMethod.name}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setQrOpen(true)}
+                    className="relative h-48 w-48 cursor-zoom-in overflow-hidden rounded-xl bg-white"
+                    aria-label={t("checkout.viewFullQr")}
+                  >
+                    <Image
+                      src={selectedPaymentMethod.qr}
+                      alt={`${selectedPaymentMethod.name} QR`}
+                      fill
+                      sizes="192px"
+                      className="object-contain"
+                    />
+                  </button>
+                  <p className="text-xs text-muted">{t("checkout.paymentAccountNote")}</p>
+                </div>
+              )}
             </div>
 
             <div className={cardClass}>
@@ -486,7 +548,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-muted">
                 <span>{t("checkout.shipping")}</span>
-                <span>{township ? formatMMK(deliveryFee) : t("checkout.shippingCalculated")}</span>
+                <span className="text-right">{t("checkout.shippingDependsOnProvider")}</span>
               </div>
             </div>
             <div className="mt-3 flex justify-between border-t border-border pt-3 text-lg font-bold">
@@ -496,6 +558,43 @@ export default function CheckoutPage() {
           </div>
         </form>
       </Container>
+
+      {qrOpen && selectedPaymentMethod && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
+          onClick={() => setQrOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setQrOpen(false)}
+            aria-label="Close"
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
+            <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+
+          <div className="relative h-[70vmin] w-[70vmin] max-h-105 max-w-105" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={selectedPaymentMethod.qr}
+              alt={`${selectedPaymentMethod.name} QR`}
+              fill
+              sizes="420px"
+              className="rounded-xl object-contain"
+            />
+          </div>
+
+          <a
+            href={selectedPaymentMethod.qr}
+            download={`${selectedPaymentMethod.name}-QR.jpg`}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded-full bg-brand px-6 py-2.5 text-sm font-bold text-white hover:bg-brand-dark"
+          >
+            {t("checkout.saveImage")}
+          </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -34,7 +34,7 @@ const NAV = [
   },
   {
     href: "/admin/delivery",
-    label: "Delivery Fees",
+    label: "Delivery Locations",
     icon: "M3 16V6a1 1 0 0 1 1-1h9v11M3 16h13M3 16a2 2 0 1 0 4 0M13 16a2 2 0 1 0 4 0M13 8h4l3 3v5h-2M17 8v5h5",
   },
   {

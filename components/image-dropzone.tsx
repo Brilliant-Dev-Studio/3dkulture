@@ -5,7 +5,7 @@ import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { compressImage } from "@/lib/compress-image";
 
-const MAX_IMAGES = 4;
+const MAX_IMAGES = 6;
 
 type ImageItem = {
   id: string;

@@ -19,8 +19,20 @@ export type Category = {
   parentId: string | null;
 };
 
+export type Region = {
+  name: string;
+  nameMy: string;
+};
+
+export type City = {
+  name: string;
+  nameMy: string;
+  region: string | null;
+};
+
 export type Township = {
   name: string;
+  nameMy: string;
   deliveryFee: number;
   city: string | null;
 };
@@ -75,6 +87,7 @@ export type Order = {
   customerFullName: string;
   customerPhone: string;
   customerAddress: string;
+  region: string;
   city: string;
   township: string;
   deliveryFee: number;

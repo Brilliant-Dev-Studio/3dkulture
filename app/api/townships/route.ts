@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/require-admin";
 export async function GET() {
   const rows = await prisma.township.findMany({ orderBy: { name: "asc" }, include: { city: true } });
   return Response.json(
-    rows.map((r) => ({ name: r.name, deliveryFee: r.deliveryFee, city: r.city?.name ?? null })),
+    rows.map((r) => ({ name: r.name, nameMy: r.nameMy, deliveryFee: r.deliveryFee, city: r.city?.name ?? null })),
   );
 }
 
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const name = body?.name?.trim();
   if (!name) return Response.json({ error: "name is required." }, { status: 400 });
+  const nameMy = body?.nameMy?.trim() ?? "";
   const deliveryFee = Number(body?.deliveryFee) || 0;
   const cityName = body?.city?.trim();
 
@@ -26,11 +27,11 @@ export async function POST(request: Request) {
   }
 
   const row = await prisma.township
-    .create({ data: { name, deliveryFee, cityId }, include: { city: true } })
+    .create({ data: { name, nameMy, deliveryFee, cityId }, include: { city: true } })
     .catch(() => null);
   if (!row) return Response.json({ error: "Already exists." }, { status: 409 });
   return Response.json(
-    { name: row.name, deliveryFee: row.deliveryFee, city: row.city?.name ?? null },
+    { name: row.name, nameMy: row.nameMy, deliveryFee: row.deliveryFee, city: row.city?.name ?? null },
     { status: 201 },
   );
 }

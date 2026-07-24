@@ -27,13 +27,14 @@ export function InvoiceDocument({ order }: { order: Order }) {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Bill To</p>
           <p className="mt-1 font-medium text-foreground">{order.customerFullName || "—"}</p>
           <p className="text-muted">{order.customerPhone || "—"}</p>
-          <p className="text-muted">
-            {[order.customerAddress, order.township, order.city].filter(Boolean).join(", ") || "—"}
-          </p>
+          <p className="text-muted">{order.customerAddress || "—"}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Status</p>
-          <p className="mt-1 font-medium capitalize text-foreground">{order.status}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Delivery Location</p>
+          {order.township && <p className="mt-1 font-medium text-foreground">{order.township}</p>}
+          {order.city && <p className="text-muted">{order.city}</p>}
+          {order.region && <p className="text-muted">{order.region}</p>}
+          {!order.township && !order.city && !order.region && <p className="mt-1 text-muted">—</p>}
         </div>
       </div>
 
@@ -71,7 +72,7 @@ export function InvoiceDocument({ order }: { order: Order }) {
           </div>
           <div className="flex justify-between text-muted">
             <span>Delivery{order.township ? ` (${order.township})` : ""}</span>
-            <span>{formatMMK(order.deliveryFee)}</span>
+            <span>Depends on provider</span>
           </div>
           <div className="flex justify-between border-t border-border pt-1.5 font-bold text-base">
             <span>Total</span>

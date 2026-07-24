@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Skeleton } from "@/components/skeleton";
 import { InvoiceDocument } from "@/components/invoice-document";
+import { downloadInvoiceAsImage } from "@/lib/download-invoice";
 import type { Order } from "@/lib/types";
 
 export default function AdminOrderInvoicePage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/orders/${params.id}`)
@@ -18,6 +20,11 @@ export default function AdminOrderInvoicePage() {
       .then(setOrder)
       .finally(() => setLoading(false));
   }, [params.id]);
+
+  function download() {
+    if (!invoiceRef.current || !order) return;
+    downloadInvoiceAsImage(invoiceRef.current, `invoice-${order.id}.png`);
+  }
 
   if (!loading && !order) {
     return (
@@ -69,16 +76,28 @@ export default function AdminOrderInvoicePage() {
         <Link href={`/admin/orders/${order.id}`} className="text-sm font-medium text-muted hover:text-brand">
           ← Back to order
         </Link>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="rounded-md bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-brand-dark"
-        >
-          Print / Save PDF
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-md border border-border px-4 py-2 text-xs font-semibold uppercase tracking-widest text-foreground hover:border-foreground"
+          >
+            Print
+          </button>
+          <button
+            type="button"
+            onClick={download}
+            className="rounded-md bg-brand px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-brand-dark"
+          >
+            Download Invoice
+          </button>
+        </div>
       </div>
 
-      <div className="mx-auto min-h-[297mm] w-[210mm] max-w-full bg-white p-[15mm] shadow-sm print:min-h-0 print:shadow-none">
+      <div
+        ref={invoiceRef}
+        className="mx-auto min-h-[297mm] w-[210mm] max-w-full bg-white p-[15mm] shadow-sm print:min-h-0 print:shadow-none"
+      >
         <InvoiceDocument order={order} />
       </div>
     </div>

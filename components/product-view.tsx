@@ -17,14 +17,17 @@ export function ProductView({ product }: { product: Product }) {
   const swatchByName = new Map(colorSwatches.map((c) => [c.name, c.hex]));
   const { t } = useI18n();
   const router = useRouter();
-  const [color, setColor] = useState(product.colors[0] ?? "");
+  const colors = Array.from(new Set(product.colors));
+  const [color, setColor] = useState(colors[0] ?? "");
   const [size, setSize] = useState(product.sizes[0] ?? "");
   const material = product.materials.join(", ");
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
-  const extraImages = (color && product.colorImages[color]) || [];
-  const galleryImages = Array.from(new Set([...extraImages, ...product.images]));
+  const allColorImages = Object.values(product.colorImages).flat();
+  const galleryImages = Array.from(new Set([...product.images, ...allColorImages]));
+  const focusSrc = color ? product.colorImages[color]?.[0] : undefined;
   const unitPrice = getVariantPrice(product, size);
   const finalPrice = getFinalPrice(product, size);
   const hasDiscount = getDiscountValue(product, size) > 0;
@@ -35,7 +38,7 @@ export function ProductView({ product }: { product: Product }) {
 
   return (
     <div className="grid min-w-0 gap-6 sm:grid-cols-2 sm:gap-10">
-      <ProductGallery key={color} images={galleryImages} alt={product.title} />
+      <ProductGallery images={galleryImages} alt={product.title} focusSrc={focusSrc} />
 
       <div className="min-w-0 sm:sticky sm:top-24 sm:self-start">
         <div className="flex items-center gap-2">
@@ -55,7 +58,24 @@ export function ProductView({ product }: { product: Product }) {
         ) : (
           <p className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">{formatMMK(finalPrice)}</p>
         )}
-        <p className="mt-4 min-w-0 wrap-break-word text-sm leading-6 tracking-wide text-muted">{product.description}</p>
+        {product.description && (
+          <div className="mt-4">
+            <p
+              className={`min-w-0 wrap-break-word text-sm leading-6 tracking-wide text-muted ${
+                descExpanded ? "" : "line-clamp-3"
+              }`}
+            >
+              {product.description}
+            </p>
+            <button
+              type="button"
+              onClick={() => setDescExpanded((v) => !v)}
+              className="mt-1 text-xs font-semibold text-brand"
+            >
+              {descExpanded ? t("product.seeLess") : t("product.seeMore")}
+            </button>
+          </div>
+        )}
 
         {product.isPreorder ? (
           <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
@@ -75,32 +95,27 @@ export function ProductView({ product }: { product: Product }) {
         )}
 
         <div className="mt-6 space-y-6 border-t border-border pt-6">
-          {product.colors.length > 0 && (
+          {colors.length > 0 && (
             <div>
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">
                 {t("product.color")}: <span className="text-foreground">{color}</span>
               </h3>
               <div className="flex flex-wrap gap-2">
-                {product.colors.map((c) => (
+                {colors.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
                     aria-label={c}
                     title={c}
-                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                      c === color
-                        ? "border-2 border-foreground font-semibold text-foreground"
-                        : "border-border text-foreground hover:border-foreground"
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-shadow ${
+                      c === color ? "ring-2 ring-foreground ring-offset-1" : "hover:ring-2 hover:ring-border hover:ring-offset-1"
                     }`}
                   >
-                    {swatchByName.has(c) && (
-                      <span
-                        className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10"
-                        style={{ backgroundColor: swatchByName.get(c) }}
-                      />
-                    )}
-                    {c}
+                    <span
+                      className="h-full w-full rounded-full border border-black/10"
+                      style={{ backgroundColor: swatchByName.get(c) ?? "#d4d4d4" }}
+                    />
                   </button>
                 ))}
               </div>

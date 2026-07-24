@@ -54,15 +54,26 @@ model Material {
   name String @unique
 }
 
+model Region {
+  id     String @id @default(cuid())
+  name   String @unique
+  nameMy String @default("")
+  cities City[]
+}
+
 model City {
   id         String     @id @default(cuid())
   name       String     @unique
+  nameMy     String     @default("")
+  regionId   String?
+  region     Region?    @relation(fields: [regionId], references: [id], onDelete: SetNull)
   townships  Township[]
 }
 
 model Township {
   id           String  @id @default(cuid())
   name         String  @unique
+  nameMy       String  @default("")
   deliveryFee  Int     @default(0)
   cityId       String?
   city         City?   @relation(fields: [cityId], references: [id], onDelete: SetNull)
@@ -112,6 +123,7 @@ model Order {
   customerFullName String
   customerPhone    String
   customerAddress  String
+  region           String      @default("")
   city             String      @default("")
   township         String      @default("")
   deliveryFee      Int         @default(0)

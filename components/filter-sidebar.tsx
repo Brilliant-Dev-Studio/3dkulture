@@ -19,7 +19,7 @@ function useFilterParam(key: string) {
     params.delete(key);
     const next = all.includes(value) ? all.filter((v) => v !== value) : [...all, value];
     next.forEach((v) => params.append(key, v));
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   }
 
   return { values, toggle };
@@ -40,21 +40,23 @@ function CategoryFilterGroup({ title, categories }: { title: string; categories:
               <span className="block text-sm font-medium text-foreground">{main.name}</span>
               {subs.length > 0 && (
                 <ul className="mt-1.5 space-y-1.5 pl-6">
-                  {subs.map((sub) => (
-                    <li key={sub.id}>
-                      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
-                        <input
-                          type="checkbox"
-                          checked={values.includes(sub.name)}
-                          onChange={() => toggle(sub.name)}
-                          className="h-3.5 w-3.5 shrink-0 accent-brand"
-                        />
-                        <span className={values.includes(sub.name) ? "font-semibold text-foreground" : ""}>
+                  {subs.map((sub) => {
+                    const selected = values.includes(sub.name);
+                    return (
+                      <li key={sub.id}>
+                        <button
+                          type="button"
+                          onClick={() => toggle(sub.name)}
+                          aria-pressed={selected}
+                          className={`text-sm transition-colors ${
+                            selected ? "font-semibold text-foreground" : "text-muted hover:text-foreground"
+                          }`}
+                        >
                           {sub.name}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </li>
@@ -62,6 +64,61 @@ function CategoryFilterGroup({ title, categories }: { title: string; categories:
         })}
       </ul>
     </AccordionSection>
+  );
+}
+
+function PriceInput({
+  value,
+  onChange,
+  onCommit,
+  step = 1000,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  onCommit: (v: number) => void;
+  step?: number;
+}) {
+  function stepBy(delta: number) {
+    const next = value + delta;
+    onChange(next);
+    onCommit(next);
+  }
+
+  return (
+    <div className="relative flex-1">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">K</span>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        onBlur={() => onCommit(value)}
+        className="no-spinner w-full rounded-xl border border-border py-2 pl-6 pr-6 text-sm"
+      />
+      <div className="absolute right-1 top-1/2 flex -translate-y-1/2 flex-col">
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Increase"
+          onClick={() => stepBy(step)}
+          className="flex h-3.5 w-4 items-center justify-center text-muted hover:text-foreground"
+        >
+          <svg aria-hidden viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth={3}>
+            <path d="m6 15 6-6 6 6" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Decrease"
+          onClick={() => stepBy(-step)}
+          className="flex h-3.5 w-4 items-center justify-center text-muted hover:text-foreground"
+        >
+          <svg aria-hidden viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth={3}>
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -87,7 +144,7 @@ function PriceRangeFilter({ minPrice, maxPrice }: { minPrice: number; maxPrice: 
     else params.set("priceMin", String(nextMin));
     if (nextMax >= maxPrice) params.delete("priceMax");
     else params.set("priceMax", String(nextMax));
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   }
 
   const minPct = maxPrice > minPrice ? ((min - minPrice) / (maxPrice - minPrice)) * 100 : 0;
@@ -96,35 +153,17 @@ function PriceRangeFilter({ minPrice, maxPrice }: { minPrice: number; maxPrice: 
   return (
     <AccordionSection title={t("filter.price")}>
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-            K
-          </span>
-          <input
-            type="number"
-            value={min}
-            min={minPrice}
-            max={max}
-            onChange={(e) => setMin(Number(e.target.value))}
-            onBlur={() => commit(Math.max(minPrice, Math.min(min, max)), max)}
-            className="w-full rounded-xl border border-border py-2 pl-6 pr-2 text-sm"
-          />
-        </div>
+        <PriceInput
+          value={min}
+          onChange={setMin}
+          onCommit={(v) => commit(Math.max(minPrice, Math.min(v, max)), max)}
+        />
         <span className="text-muted">–</span>
-        <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-            K
-          </span>
-          <input
-            type="number"
-            value={max}
-            min={min}
-            max={maxPrice}
-            onChange={(e) => setMax(Number(e.target.value))}
-            onBlur={() => commit(min, Math.min(maxPrice, Math.max(max, min)))}
-            className="w-full rounded-xl border border-border py-2 pl-6 pr-2 text-sm"
-          />
-        </div>
+        <PriceInput
+          value={max}
+          onChange={setMax}
+          onCommit={(v) => commit(min, Math.min(maxPrice, Math.max(v, min)))}
+        />
       </div>
 
       <div className="mt-4 flex justify-between text-sm text-foreground">
@@ -202,7 +241,7 @@ export function FilterSidebar() {
     params.delete("category");
     params.delete("priceMin");
     params.delete("priceMax");
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   }
 
   return (

@@ -392,8 +392,6 @@ export function ProductForm({
     if (discountValue && discountType === "fixed" && Number(discountValue) < 0)
       errors.discountValue = "Enter a valid amount.";
     if (stock && Number(stock) < 0) errors.stock = "Enter a valid stock count.";
-    if (selectedColors.length === 0) errors.colors = "Select at least one color.";
-    if (selectedSizes.length === 0) errors.sizes = "Select at least one size.";
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 

@@ -67,33 +67,70 @@ async function main() {
     });
   }
 
-  const CITY_TOWNSHIPS: Record<string, { name: string; deliveryFee: number }[]> = {
-    Yangon: [
-      { name: "Bahan", deliveryFee: 2000 },
-      { name: "Sanchaung", deliveryFee: 2000 },
-      { name: "Yankin", deliveryFee: 2500 },
-      { name: "Insein", deliveryFee: 3500 },
-      { name: "Thingangyun", deliveryFee: 3000 },
-    ],
-    Mandalay: [
-      { name: "Chanayethazan", deliveryFee: 3000 },
-      { name: "Aung Myay Thar Zan", deliveryFee: 3000 },
-    ],
-    Naypyidaw: [{ name: "Zabuthiri", deliveryFee: 4000 }],
-  };
+  const REGIONS = [
+    {
+      name: "Yangon Region",
+      nameMy: "ရန်ကုန်တိုင်းဒေသကြီး",
+      cities: [
+        {
+          name: "Yangon",
+          nameMy: "ရန်ကုန်",
+          townships: [
+            { name: "Bahan", nameMy: "ဗဟန်း" },
+            { name: "Sanchaung", nameMy: "စမ်းချောင်း" },
+            { name: "Yankin", nameMy: "ရန်ကင်း" },
+            { name: "Insein", nameMy: "အင်းစိန်" },
+            { name: "Thingangyun", nameMy: "သင်္ဃန်းကျွန်း" },
+          ],
+        },
+      ],
+    },
+    {
+      name: "Mandalay Region",
+      nameMy: "မန္တလေးတိုင်းဒေသကြီး",
+      cities: [
+        {
+          name: "Mandalay",
+          nameMy: "မန္တလေး",
+          townships: [
+            { name: "Chanayethazan", nameMy: "ချမ်းအေးသာဇံ" },
+            { name: "Aung Myay Thar Zan", nameMy: "အောင်မြေသာစံ" },
+          ],
+        },
+      ],
+    },
+    {
+      name: "Naypyidaw Union Territory",
+      nameMy: "နေပြည်တော် ပြည်ထောင်စုနယ်မြေ",
+      cities: [
+        {
+          name: "Naypyidaw",
+          nameMy: "နေပြည်တော်",
+          townships: [{ name: "Zabuthiri", nameMy: "ဇမ္ဗူသီရိ" }],
+        },
+      ],
+    },
+  ];
 
-  for (const cityName of Object.keys(CITY_TOWNSHIPS)) {
-    const city = await prisma.city.upsert({
-      where: { name: cityName },
-      create: { name: cityName },
-      update: {},
+  for (const r of REGIONS) {
+    const region = await prisma.region.upsert({
+      where: { name: r.name },
+      create: { name: r.name, nameMy: r.nameMy },
+      update: { nameMy: r.nameMy },
     });
-    for (const tw of CITY_TOWNSHIPS[cityName]) {
-      await prisma.township.upsert({
-        where: { name: tw.name },
-        create: { name: tw.name, deliveryFee: tw.deliveryFee, cityId: city.id },
-        update: {},
+    for (const c of r.cities) {
+      const city = await prisma.city.upsert({
+        where: { name: c.name },
+        create: { name: c.name, nameMy: c.nameMy, regionId: region.id },
+        update: { nameMy: c.nameMy, regionId: region.id },
       });
+      for (const tw of c.townships) {
+        await prisma.township.upsert({
+          where: { name: tw.name },
+          create: { name: tw.name, nameMy: tw.nameMy, cityId: city.id },
+          update: { nameMy: tw.nameMy },
+        });
+      }
     }
   }
 
