@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/require-admin";
+import { notifyNewOrderOnTelegram } from "@/lib/telegram";
 
 export async function GET() {
   const session = await getAdminSession();
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
     },
     include: { items: true },
   });
+
+  await notifyNewOrderOnTelegram({ ...order, invoiceUrl: order.invoiceDataUrl });
 
   return Response.json(order, { status: 201 });
 }

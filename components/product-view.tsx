@@ -6,6 +6,7 @@ import { useCart } from "@/lib/cart-context";
 import { useI18n } from "@/lib/i18n";
 import { formatMMK } from "@/lib/format";
 import { getVariantPrice, getFinalPrice, getDiscountValue } from "@/lib/pricing";
+import { getStock } from "@/lib/stock";
 import { ProductGallery } from "@/components/product-gallery";
 import { T } from "@/components/t";
 import { useColors } from "@/lib/use-colors";
@@ -31,6 +32,8 @@ export function ProductView({ product }: { product: Product }) {
   const unitPrice = getVariantPrice(product, size);
   const finalPrice = getFinalPrice(product, size);
   const hasDiscount = getDiscountValue(product, size) > 0;
+  const effectiveStock = getStock(product, color);
+  const outOfStock = !product.isPreorder && effectiveStock <= 0;
 
   function addToCart() {
     addLine({ productId: product.id, color, size, material, qty });
@@ -81,14 +84,14 @@ export function ProductView({ product }: { product: Product }) {
           <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
             {product.preorderNote || t("product.preorderNotice")}
           </div>
-        ) : product.stock <= 0 ? (
+        ) : effectiveStock <= 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm font-medium text-brand">
             {t("product.outOfStock")}
           </div>
         ) : (
-          product.stock <= product.lowStockThreshold && (
+          effectiveStock <= product.lowStockThreshold && (
             <div className="mt-4 rounded-2xl border border-dashed border-brand bg-brand/5 py-3 text-center text-sm text-brand">
-              {t("product.lowStockPrefix")} <span className="font-bold">{product.stock}</span>{" "}
+              {t("product.lowStockPrefix")} <span className="font-bold">{effectiveStock}</span>{" "}
               {t("product.lowStockSuffix")}
             </div>
           )
@@ -101,23 +104,36 @@ export function ProductView({ product }: { product: Product }) {
                 {t("product.color")}: <span className="text-foreground">{color}</span>
               </h3>
               <div className="flex flex-wrap gap-2">
-                {colors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    aria-label={c}
-                    title={c}
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-shadow ${
-                      c === color ? "ring-2 ring-foreground ring-offset-1" : "hover:ring-2 hover:ring-border hover:ring-offset-1"
-                    }`}
-                  >
-                    <span
-                      className="h-full w-full rounded-full border border-black/10"
-                      style={{ backgroundColor: swatchByName.get(c) ?? "#d4d4d4" }}
-                    />
-                  </button>
-                ))}
+                {colors.map((c) => {
+                  const colorOutOfStock = !product.isPreorder && getStock(product, c) <= 0;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => !colorOutOfStock && setColor(c)}
+                      disabled={colorOutOfStock}
+                      aria-label={colorOutOfStock ? `${c} (${t("product.outOfStock")})` : c}
+                      title={colorOutOfStock ? `${c} — ${t("product.outOfStock")}` : c}
+                      className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-shadow ${
+                        colorOutOfStock
+                          ? "cursor-not-allowed opacity-30"
+                          : c === color
+                            ? "ring-2 ring-foreground ring-offset-1"
+                            : "hover:ring-2 hover:ring-border hover:ring-offset-1"
+                      }`}
+                    >
+                      <span
+                        className="h-full w-full rounded-full border border-black/10"
+                        style={{ backgroundColor: swatchByName.get(c) ?? "#d4d4d4" }}
+                      />
+                      {colorOutOfStock && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="h-[1.5px] w-7 rotate-45 bg-foreground/70" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -177,12 +193,13 @@ export function ProductView({ product }: { product: Product }) {
 
             <button
               type="button"
+              disabled={outOfStock}
               onClick={() => {
                 addToCart();
                 setAdded(true);
                 window.setTimeout(() => setAdded(false), 1500);
               }}
-              className="flex-1 rounded-full border border-brand text-[11px] font-semibold uppercase tracking-widest text-brand transition-colors hover:bg-brand hover:text-white"
+              className="flex-1 rounded-full border border-brand text-[11px] font-semibold uppercase tracking-widest text-brand transition-colors hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-brand"
             >
               {added ? t("product.addedToCart") : t("product.addToCart")}
             </button>
@@ -190,11 +207,12 @@ export function ProductView({ product }: { product: Product }) {
 
           <button
             type="button"
+            disabled={outOfStock}
             onClick={() => {
               addToCart();
               router.push("/checkout");
             }}
-            className="w-full rounded-full bg-brand py-4 text-sm font-bold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark"
+            className="w-full rounded-full bg-brand py-4 text-sm font-bold uppercase tracking-widest text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-brand"
           >
             {product.isPreorder ? t("product.preorderNow") : t("product.buyNow")}
           </button>

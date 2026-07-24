@@ -351,8 +351,9 @@ export default function AdminOrderDetailPage() {
               <div className="mt-4 border-t border-border pt-4 text-sm">
                 <p className="text-xs text-muted">Payment method</p>
                 <p className="mt-1 font-medium text-foreground">
-                  {{ kbzpay: "KBZPay", wavepay: "WavePay", uabpay: "UABPay" }[order.paymentMethod] ??
-                    order.paymentMethod}
+                  {{ kbzpay: "KBZPay", wavepay: "WavePay", uabpay: "UABPay", banktransfer: "Bank Transfer" }[
+                    order.paymentMethod
+                  ] ?? order.paymentMethod}
                 </p>
               </div>
             )}

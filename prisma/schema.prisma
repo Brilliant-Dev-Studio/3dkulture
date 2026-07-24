@@ -98,6 +98,7 @@ model Product {
   price          Int
   costPrice      Int      @default(0)
   stock          Int      @default(0)
+  colorStock     Json     @default("{}")
   lowStockThreshold Int   @default(5)
   discountType   String   @default("percent")
   discountValue  Int      @default(0)

@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       isPreorder: Boolean(body.isPreorder),
       preorderNote: body.preorderNote ?? "",
       stock: Number(body.stock) || 0,
+      colorStock: body.colorStock ?? {},
       lowStockThreshold: Number(body.lowStockThreshold) || 5,
       images: body.images ?? [],
       colors: body.colors ?? [],

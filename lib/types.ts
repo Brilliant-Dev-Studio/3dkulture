@@ -48,7 +48,8 @@ export type Product = {
   discountValue: number; // 0-100 for percent, MMK amount for fixed
   isPreorder: boolean; // when true, storefront shows "Preorder" instead of "Buy Now"
   preorderNote: string; // optional note shown near the preorder CTA, e.g. estimated ready date
-  stock: number; // units in stock
+  stock: number; // units in stock — fallback when a color has no entry in colorStock
+  colorStock: Record<string, number>; // color name -> stock for that color; overrides stock when set
   lowStockThreshold: number; // stock at/below this is flagged low
   images: string[];
   colors: string[];

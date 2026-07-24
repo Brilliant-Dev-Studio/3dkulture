@@ -21,11 +21,35 @@ const fieldClass =
 const labelClass = "mb-1.5 block text-xs font-semibold text-muted";
 const cardClass = "rounded-[25px] border border-border bg-white p-6";
 
-const PAYMENT_METHODS = [
+type PaymentMethod = {
+  id: string;
+  name: string;
+  logo?: string;
+  qr?: string;
+  accounts?: { bank: string; number: string }[];
+};
+
+const PAYMENT_METHODS: PaymentMethod[] = [
   { id: "kbzpay", name: "KBZPay", logo: "/payments/kbzpay.png", qr: "/paymentQrs/kbzPay.jpg" },
   { id: "wavepay", name: "WavePay", logo: "/payments/wavepay.jpg", qr: "/paymentQrs/wavePay.jpg" },
   { id: "uabpay", name: "UABPay", logo: "/payments/uabpay.jpg", qr: "/paymentQrs/uabPay.jpg" },
-] as const;
+  {
+    id: "banktransfer",
+    name: "Bank Transfer",
+    accounts: [
+      { bank: "KBZ Special", number: "29913799920282301" },
+      { bank: "AYA", number: "20027850932" },
+    ],
+  },
+];
+
+function BankIcon() {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path d="M3 10 12 4l9 6M4 10v9M8 10v9M12 10v9M16 10v9M20 10v9M2 21h20" />
+    </svg>
+  );
+}
 
 function StepBadge({ n }: { n: number }) {
   return (
@@ -100,11 +124,16 @@ export default function CheckoutPage() {
   const citiesInRegion = regions.length === 0 ? cities : cities.filter((c) => c.region === region);
   const townshipsInCity = cities.length === 0 ? townships : townships.filter((tw) => tw.city === city);
   const localize = (name: string, nameMy: string) => (locale === "my" && nameMy ? nameMy : name);
-  const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]["id"]>(
-    PAYMENT_METHODS[0].id,
-  );
+  const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHODS[0].id);
   const selectedPaymentMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
   const [qrOpen, setQrOpen] = useState(false);
+  const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
+
+  function copyNumber(number: string) {
+    navigator.clipboard.writeText(number);
+    setCopiedNumber(number);
+    window.setTimeout(() => setCopiedNumber((cur) => (cur === number ? null : cur)), 1500);
+  }
   const [placed, setPlaced] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -425,7 +454,7 @@ export default function CheckoutPage() {
                 <h2 className="text-sm font-bold uppercase tracking-wide">{t("checkout.paymentMethod")}</h2>
               </div>
               <p className="ml-9 text-xs text-muted">{t("checkout.paymentMethodNote")}</p>
-              <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {PAYMENT_METHODS.map((method) => (
                   <button
                     key={method.id}
@@ -437,15 +466,19 @@ export default function CheckoutPage() {
                         : "border-border hover:border-foreground"
                     }`}
                   >
-                    <div className="relative h-10 w-full">
-                      <Image src={method.logo} alt={method.name} fill sizes="120px" className="object-contain" />
+                    <div className="relative flex h-10 w-full items-center justify-center">
+                      {method.logo ? (
+                        <Image src={method.logo} alt={method.name} fill sizes="120px" className="object-contain" />
+                      ) : (
+                        <BankIcon />
+                      )}
                     </div>
                     <span className="text-xs font-semibold text-foreground">{method.name}</span>
                   </button>
                 ))}
               </div>
 
-              {selectedPaymentMethod && (
+              {selectedPaymentMethod && selectedPaymentMethod.qr && (
                 <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-brand bg-brand/5 p-4 text-center">
                   <p className="text-xs font-semibold text-brand">
                     {t("checkout.scanToPay")} {selectedPaymentMethod.name}
@@ -464,6 +497,50 @@ export default function CheckoutPage() {
                       className="object-contain"
                     />
                   </button>
+                  <p className="text-xs text-muted">{t("checkout.paymentAccountNote")}</p>
+                </div>
+              )}
+
+              {selectedPaymentMethod && selectedPaymentMethod.accounts && (
+                <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-brand bg-brand/5 p-4 text-center">
+                  <p className="text-xs font-semibold text-brand">{t("checkout.transferTo")}</p>
+                  <div className="flex flex-wrap items-center justify-center gap-4">
+                    {selectedPaymentMethod.accounts.map((acc) => (
+                      <div key={acc.number} className="flex flex-col items-center gap-1.5">
+                        <p className="text-sm font-bold text-foreground">{acc.bank}</p>
+                        <div className="flex items-center gap-1 rounded-full border border-border bg-white pl-4 pr-1.5 py-1.5">
+                          <span className="font-mono text-sm text-foreground">{acc.number}</span>
+                          <button
+                            type="button"
+                            onClick={() => copyNumber(acc.number)}
+                            aria-label={`${t("checkout.copy")} ${acc.number}`}
+                            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+                              copiedNumber === acc.number
+                                ? "bg-emerald-500 text-white"
+                                : "bg-brand text-white hover:bg-brand-dark"
+                            }`}
+                          >
+                            {copiedNumber === acc.number ? (
+                              <>
+                                <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                                  <path d="M20 6 9 17l-5-5" />
+                                </svg>
+                                {t("checkout.copied")}
+                              </>
+                            ) : (
+                              <>
+                                <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2}>
+                                  <rect x="9" y="9" width="12" height="12" rx="2" />
+                                  <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                                </svg>
+                                {t("checkout.copy")}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   <p className="text-xs text-muted">{t("checkout.paymentAccountNote")}</p>
                 </div>
               )}
@@ -559,7 +636,7 @@ export default function CheckoutPage() {
         </form>
       </Container>
 
-      {qrOpen && selectedPaymentMethod && (
+      {qrOpen && selectedPaymentMethod && selectedPaymentMethod.qr && (
         <div
           className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
           onClick={() => setQrOpen(false)}

@@ -75,6 +75,32 @@ function SizePriceRow({
   );
 }
 
+function ColorStockRow({
+  label,
+  value,
+  baseStock,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  baseStock: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm text-foreground">{label}</span>
+      <input
+        type="number"
+        min={0}
+        value={value ?? baseStock}
+        onChange={(e) => onChange(Number(e.target.value) || 0)}
+        placeholder={String(baseStock)}
+        className={`${fieldClass} w-24 py-1.5 text-xs`}
+      />
+    </div>
+  );
+}
+
 function SizeDiscountRow({
   label,
   value,
@@ -351,6 +377,7 @@ export function ProductForm({
   const [isPreorder, setIsPreorder] = useState(initialProduct?.isPreorder ?? false);
   const [preorderNote, setPreorderNote] = useState(initialProduct?.preorderNote ?? "");
   const [stock, setStock] = useState(initialProduct ? String(initialProduct.stock) : "0");
+  const [colorStock, setColorStock] = useState<Record<string, number>>(initialProduct?.colorStock ?? {});
   const [lowStockThreshold, setLowStockThreshold] = useState(
     initialProduct ? String(initialProduct.lowStockThreshold) : "5",
   );
@@ -407,6 +434,9 @@ export function ProductForm({
       isPreorder,
       preorderNote: preorderNote.trim(),
       stock: Number(stock) || 0,
+      colorStock: Object.fromEntries(
+        selectedColors.filter((c) => colorStock[c] != null).map((c) => [c, colorStock[c]]),
+      ),
       lowStockThreshold: Number(lowStockThreshold) || 5,
       images: images.length > 0 ? images : [fallbackImage],
       colors: selectedColors,
@@ -622,6 +652,26 @@ export function ProductForm({
                 <p className="mt-1 text-[11px] text-muted">Flagged on the dashboard when stock drops to this or below.</p>
               </div>
             </div>
+
+            {selectedColors.length > 0 && (
+              <div>
+                <span className={labelClass}>Stock by Color</span>
+                <p className="mb-2 text-[11px] text-muted">
+                  Overrides the overall stock above for that color. Leave a color blank to keep using it.
+                </p>
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  {selectedColors.map((c) => (
+                    <ColorStockRow
+                      key={c}
+                      label={c}
+                      value={colorStock[c]}
+                      baseStock={Number(stock) || 0}
+                      onChange={(v) => setColorStock((prev) => ({ ...prev, [c]: v }))}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="flex items-center justify-between gap-3">

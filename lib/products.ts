@@ -71,6 +71,7 @@ const RAW_PRODUCTS: Omit<
   | "isPreorder"
   | "preorderNote"
   | "stock"
+  | "colorStock"
   | "lowStockThreshold"
 >[] = [
   {
@@ -177,6 +178,7 @@ export const BASE_PRODUCTS: Product[] = RAW_PRODUCTS.map((p) => ({
   isPreorder: false,
   preorderNote: "",
   stock: 20,
+  colorStock: {},
   lowStockThreshold: 5,
 }));
 
